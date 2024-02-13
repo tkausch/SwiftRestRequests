@@ -146,6 +146,20 @@ public class RestApiCaller : NSObject {
         let decodableDeserializer = DecodableDeserializer<D>()
         return try await makeCall(relativePath, httpMethod: .Get, payload: nil, responseDeserializer: decodableDeserializer, options: options)
     }
+    
+    /// Performs a GET request to the server, capturing the data object type response from the server.
+    ///
+    /// Note: This is an **asynchronous** call and will return immediately.  The network operation is done in the background.
+    ///
+    /// - parameter type: The type of object this get call returns.
+    /// - parameter relativePath: An **optional** parameter of a relative path of this inscatnaces main URL as setup at when created.
+    /// - parameter options: An **optional** parameter of a `RestOptions` struct containing any header fields to include with the call or a different expected status code.
+    /// - returns: The successful HTTP response status.
+    public func get(at relativePath: String? = nil, options: RestOptions = RestOptions()) async throws -> Int {
+        let decodableDeserializer = VoidDeserializer()
+        let ( _ , httpStatus) = try await makeCall(relativePath, httpMethod: .Get, payload: nil, responseDeserializer: decodableDeserializer, options: options)
+        return httpStatus
+    }
 
     /// Performs a POST request to the server, capturing the `JSON` response from the server.
     ///
@@ -171,7 +185,7 @@ public class RestApiCaller : NSObject {
     /// - parameter relativePath: An **optional** parameter of a relative path of this inscatnaces main URL as setup at when created.
     /// - parameter responseType: The type of object this get call returns. This type must conform to `Decodable`
     /// - parameter options: An **optional** parameter of a `RestOptions` struct containing any header fields to include with the call or a different expected status code.
-    /// - returns: Returns  successful httpStatus
+    /// - returns: The successful HTTP response status.
     public func post<E: Encodable>(_ encodable: E, at relativePath: String? = nil, options: RestOptions = RestOptions()) async throws -> Int {
         let payload = try JSONEncoder().encode(encodable)
         let decodableDeserializer = VoidDeserializer()
@@ -195,6 +209,23 @@ public class RestApiCaller : NSObject {
         let decodableDeserializer = DecodableDeserializer<D>()
         return try await makeCall(relativePath, httpMethod: .Put, payload: payload, responseDeserializer: decodableDeserializer, options: options)
     }
+    
+    /// Performs a PUT request to the server, capturing the HTTP response status.
+    ///
+    /// Note: This is an **asynchronous** call and will return immediately.  The network operation is done in the background.
+    ///
+    /// - parameter encodable: Any object that can be encoded.
+    /// - parameter relativePath: An **optional** parameter of a relative path of this inscatnaces main URL as setup at when created.
+    /// - parameter responseType: The type of object this get call returns. This type must conform to `Decodable`
+    /// - parameter options: An **optional** parameter of a `RestOptions` struct containing any header fields to include with the call or a different expected status code.
+    /// - returns: The successful HTTP response status.
+    public func put<E: Encodable>(_ encodable: E, at relativePath: String? = nil, options: RestOptions = RestOptions()) async throws ->  Int {
+        let payload = try JSONEncoder().encode(encodable)
+        let voidDeserializer = VoidDeserializer()
+        let (_, httpStatus) = try await makeCall(relativePath, httpMethod: .Put, payload: payload, responseDeserializer: voidDeserializer, options: options)
+        return httpStatus
+    }
+    
     
     /// Performs a DELETE request to the server, capturing the `JSON` response from the server.
     ///
