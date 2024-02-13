@@ -1,5 +1,7 @@
 //
-// This File belongs to SwiftRestRequests 
+// RestApiCallerTest.swift
+//
+// This File belongs to SwiftRestRequests
 // Copyright © 2024 Thomas Kausch.
 // All Rights Reserved.
 
@@ -7,9 +9,7 @@
 import XCTest
 @testable import SwiftRestRequests
 
-
 import XCTest
-
 
 struct HttpBinHeaders: Decodable {
     let accept: String
@@ -17,11 +17,7 @@ struct HttpBinHeaders: Decodable {
     enum CodingKeys: String, CodingKey {
         case accept = "Accept"
     }
-    
 }
-
-
-
 
 final class RestApiCallerTest: XCTestCase {
     
