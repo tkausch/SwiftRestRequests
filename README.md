@@ -1,7 +1,11 @@
 # SwiftRestRequests
 SwiftRestRequests is an elegant and simple REST library for Swift, built for human beings and can be used on iOS, iPadOS, macOS, tvOS, and watchOS.
 
-Requests allows you to send `REST` requests extremely easily using `HTTP1.1/2/3`. Thanks to Swift 4's Codable JSON Response and Request objects are fully validated. There’s no need to manually add query strings to your URLs, or to form-encode your POST data. Keep-alive and HTTP connection pooling are 100% automatic. 
+This Package allows you to send REST requests extremely easily using HTTP/1.1 or HTTP/2. Thanks to Swift 4's Codable support JSON Response and Request objects are fully type validated.
+
+The optional `RestOption` object supports the setting of specific HTTP headers, query parameters and HTTP timeout for each REST request.  
+
+The Package is using HTTP client transport that uses the `URLSession` type from the `Foundation` framework to perform HTTP operations. Therfore it is flexible to add other 
 
 ## Features
 
@@ -12,7 +16,6 @@ Requests allows you to send `REST` requests extremely easily using `HTTP1.1/2/3`
 - [x] Send custom HTTP headers
 - [x] Change timeout options
 - [x] Fully native Swift API
-
 
 ### Requirements
 
@@ -34,6 +37,6 @@ If you prefer to add it manually using SPM, just add the SwiftRestRequests depen
 
 ```swift
 dependencies: [
-.package(url: "https://github.com//RestEssentials.git", from: "6.0.1")
+.package(url: "https://github.com/tkausch/SwiftRestRequests", from: "0.9")
 ]
 ```
