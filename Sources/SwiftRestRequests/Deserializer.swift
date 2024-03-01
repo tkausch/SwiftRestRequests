@@ -43,7 +43,7 @@ public final class DecodableDeserializer<T: Decodable>: Deserializer {
 
     public typealias ResponseType = T
 
-    public let acceptHeader = MimeType.Json.rawValue
+    public let acceptHeader = MimeType.ApplicationJson.rawValue
 
     public init() { }
 
@@ -74,7 +74,7 @@ public final class DataDeserializer: Deserializer {
 
     public typealias ResponseType = Data
 
-    public let acceptHeader = MimeType.OctetStream.rawValue
+    public let acceptHeader = MimeType.ApplicationOctetStream.rawValue
 
     public required init() { }
 

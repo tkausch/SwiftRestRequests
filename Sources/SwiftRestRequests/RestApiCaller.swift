@@ -73,7 +73,7 @@ public class RestApiCaller : NSObject {
         request.httpMethod = httpMethod
 
         // Set general headers from REST option object
-        request.setValue(MimeType.Json.rawValue, forHTTPHeaderField: HttpHeaders.Accept.rawValue)
+        request.setValue(MimeType.ApplicationJson.rawValue, forHTTPHeaderField: HttpHeaders.Accept.rawValue)
         if let customHeaders = options.httpHeaders {
             for (httpHeaderKey, httpHeaderValue) in customHeaders {
                 request.setValue(httpHeaderValue, forHTTPHeaderField: httpHeaderKey)
@@ -89,7 +89,7 @@ public class RestApiCaller : NSObject {
 
         // set data with json payload ...
         if let payloadToSend = payload {
-            request.setValue(MimeType.Json.rawValue, forHTTPHeaderField: HttpHeaders.ContentType.rawValue)
+            request.setValue(MimeType.ApplicationJson.rawValue, forHTTPHeaderField: HttpHeaders.ContentType.rawValue)
             request.httpBody = payloadToSend
         }
 
@@ -116,13 +116,16 @@ public class RestApiCaller : NSObject {
     private func makeCall<T: Deserializer>(_ relativePath: String?, httpMethod: RestMethod, payload: Data?, responseDeserializer: T, options: RestOptions) async throws -> (T.ResponseType?, Int) {
         let (data, httpResponse) = try await dataTask(relativePath: relativePath, httpMethod: httpMethod.rawValue, accept: responseDeserializer.acceptHeader, payload: payload, options: options)
         
-        // Validate http response - content-type MUST be set or empty data
-        if let contentType = httpResponse.value(forHTTPHeaderField: HttpHeaders.ContentType.rawValue) {
-            if !data.isEmpty && contentType != MimeType.Json.rawValue {
-                throw RestError.badResponse(httpResponse, data)
-            }
+        guard !data.isEmpty else {
+            return (nil, httpResponse.statusCode)
         }
-         
+        
+        let contentType =  httpResponse.value(forHTTPHeaderField: HttpHeaders.ContentType.rawValue)
+        guard  let contentType, let _ = MimeType(rawValue: contentType) else {
+            throw RestError.invalidMimeType(contentType)
+        }
+        
+        // Postcondition: data is there and contenttype is supported
         let successRange = 200...299
         if successRange.contains(httpResponse.statusCode)  {
             do {
@@ -130,7 +133,7 @@ public class RestApiCaller : NSObject {
                     let transformedResponse = try responseDeserializer.deserialize(data)
                     return (transformedResponse, httpResponse.statusCode)
                 } else {
-                    // when no data is returned but http status represents success i.e. 204
+                    // when no data is there we just return the status code
                     return (nil, httpResponse.statusCode)
                 }
             } catch {
@@ -270,5 +273,22 @@ public class RestApiCaller : NSObject {
         let decodableDeserializer = DecodableDeserializer<D>()
         return try await makeCall(relativePath, httpMethod: .Patch, payload: payload, responseDeserializer: decodableDeserializer, options: options)
     }
+    
+}
+
+
+extension RestApiCaller: URLSessionDelegate {
+    
+    public func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
+        if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust  {
+            guard let serverTrust =  challenge.protectionSpace.serverTrust else {
+                return (URLSession.AuthChallengeDisposition.cancelAuthenticationChallenge, nil)
+            }
+            return (URLSession.AuthChallengeDisposition.useCredential, URLCredential(trust: serverTrust))
+        } else {
+            return (URLSession.AuthChallengeDisposition.performDefaultHandling, nil)
+        }
+    }
+    
     
 }

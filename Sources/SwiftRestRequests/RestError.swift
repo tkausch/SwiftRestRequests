@@ -29,6 +29,11 @@ public enum RestError: Error {
     /// - parameter URLResponse: The response returned form the server.
     /// - parameter Data: The raw returned data from the server.
     case badResponse(URLResponse, Data)
+    
+    
+    /// Indicates that the server responded with an unexpected mime type
+    /// - parameter String: The returned mimetype
+    case invalidMimeType(String?)
 
     /// Indicates the server's response could not be deserialized using the given Deserializer.
     /// - parameter HTTPURLResponse: The HTTPURLResponse from the server

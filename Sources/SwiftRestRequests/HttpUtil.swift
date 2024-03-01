@@ -33,9 +33,10 @@ internal enum RestMethod: String {
 }
 
 internal enum MimeType: String {
-    case Json =  "application/json"
-    case OctetStream = "application/octet-stream"
-    case ProblemJson = "application/problem+json"
+    case ApplicationJson =  "application/json"
+    case TextPlain = "text/plain"
+    case ApplicationOctetStream = "application/octet-stream"
+    case ApplicationProblemJson = "application/problem+json"
     case Void = "*/*"
 }
 

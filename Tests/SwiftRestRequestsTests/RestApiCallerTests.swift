@@ -19,20 +19,45 @@ struct HttpBinHeaders: Decodable {
     }
 }
 
-final class RestApiCallerTest: XCTestCase {
+final class RestApiCallerTests: XCTestCase {
     
     var apiCaller: RestApiCaller!
     
     override func setUp()  {
         guard let url = URL(string: "https://httpbin.org") else {
-            XCTFail("Invalid test server URL!")
+            XCTFail("Bad test server URL!")
             return
         }
         apiCaller = RestApiCaller(baseUrl: url)
     }
-
-    func testGETWithDecodable() async throws {
+    
+    func testAcceptHeaderIsSentInRequest() async throws {
         
+        struct Headers: Decodable {
+            let Accept: String
+        }
+        
+        struct HttpHeadersResponse: Decodable {
+            let headers: Headers
+        }
+        
+        let (response, httpStatus) = try await apiCaller.get(HttpHeadersResponse.self, at: "headers")
+        
+        XCTAssertEqual(httpStatus, 200)
+        XCTAssertNotNil(response)
+        XCTAssertEqual(response!.headers.Accept, MimeType.ApplicationJson.rawValue)
+    }
+    
+    
+    
+}
+
+// MARK: - Testing GET HTTP Calls
+
+extension RestApiCallerTests {
+    
+    
+    func testGetWithDecodable() async throws {
         struct HttpBinResponse: Decodable {
             let url: String
             let origin: String
@@ -44,7 +69,33 @@ final class RestApiCallerTest: XCTestCase {
         XCTAssertEqual(httpStatus, 200)
         XCTAssertEqual(response?.url, "https://httpbin.org/get")
         XCTAssertEqual(response?.headers.accept, "application/json")
-     }
+    }
+    
+    func testGetWithErrorStatus() async throws {
+        do {
+            let httpStatus = try await apiCaller.get(at: "status/404")
+        } catch {
+            switch error {
+            case let RestError.failedRestCall(_, status, error):
+                XCTAssertEqual(status, 404)
+                XCTAssertNil(error)
+            default:
+                XCTFail("FailedRestCall error is expected")
+            }
+        }
+        
+    }
+    
+    func testGetWithoutDecodable() async throws {
+        let  httpStatus = try await apiCaller.get(at: "status/204")
+        XCTAssertEqual(httpStatus, 204)
+    }
+    
+}
+
+// MARK: - Testing POST HTTP Calls
+
+extension RestApiCallerTests {
     
     func testPOSTWithDecodable() async throws {
         
