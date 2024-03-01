@@ -40,3 +40,60 @@ dependencies: [
 .package(url: "https://github.com/tkausch/SwiftRestRequests", from: "0.9")
 ]
 ```
+
+### Usage
+
+SwiftRequests is best used with Swift 4's native JSON support. For each service you should implement the corresponding Request and response struct using `Encodable` and `Decodable` protocol. Then you are able to call the REST service using the required HTTP method with the `RestAPICaller`. A best practice is to subclass RestApiCaller and implement a method for each of your REST service endpoints. These methods will delegate to the `get, post, put, delete or put`methods. 
+
+
+#### Making a GET Request and getting back a Response object
+
+```
+import SwiftRestRequests
+
+struct HttpBinResponse: Decodable {
+    let url: String
+    let origin: String
+    let headers: HttpBinHeaders
+}
+
+guard let url = URL(string: "https://httpbin.org") else {
+    Print("Bad server URL!")
+    return
+}
+apiCaller = RestApiCaller(baseUrl: url)
+
+let (response, httpStatus) = try await apiCaller.get(HttpBinResponse.self, at: "get")
+
+print("HttpStatus: \(httpStatus)")
+
+```
+#### Making a POST Request using a Swift 4 Encodable Request object and getting back a Decodable Response object
+
+
+```
+import SwiftRestRequests
+
+struct HttpBinRequest: Encodable {
+	let key1: String
+	let key2: Int
+	let key3: Float
+	let key4: Bool
+	let key5: [Int]
+}
+        
+struct HttpBinResponse: Decodable {
+	let json: HttpBinRequest
+}
+
+let request = HttpBinRequest(key1: "Hello", key2: 1, key3: 2.0, key4: true, key5: [1,2,3,4,5])
+        
+        
+let (response, httpStatus) = 
+	try await apiCaller.post(request, at: "post", responseType: HttpBinResponse.self)
+
+print("\(response?.json)"
+
+```
+
+
