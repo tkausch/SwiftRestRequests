@@ -33,7 +33,7 @@ public typealias HeaderGenerator = (URL) -> [String : String]?
 /// Allows users to create HTTP REST networking calls that deal with JSON.
 ///
 /// **NOTE:** Ensure to configure `App Transport Security` appropriately.
-public class RestApiCaller : NSObject {
+open class RestApiCaller : NSObject {
 
     private var session: URLSession
     private var baseUrl: URL
