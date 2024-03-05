@@ -73,17 +73,16 @@ extension RestApiCallerTests {
     
     func testGetWithErrorStatus() async throws {
         do {
-            let httpStatus = try await apiCaller.get(at: "status/404")
+            
+            let _ = try await apiCaller.get(at: "status/404")
+            XCTFail("Successful call but error is expected")
+            
+        } catch RestError.failedRestCall(_, let status, let error)  {
+            XCTAssertEqual(status, 404)
+            XCTAssertNil(error)
         } catch {
-            switch error {
-            case let RestError.failedRestCall(_, status, error):
-                XCTAssertEqual(status, 404)
-                XCTAssertNil(error)
-            default:
                 XCTFail("FailedRestCall error is expected")
-            }
         }
-        
     }
     
     func testGetWithoutDecodable() async throws {
