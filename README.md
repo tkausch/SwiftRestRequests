@@ -1,11 +1,15 @@
 # SwiftRestRequests
-SwiftRestRequests is an elegant and simple REST library for Swift, built for human beings and can be used on iOS, iPadOS, macOS, tvOS, and watchOS.
+SwiftRestRequests is a modern and simple  REST library for Swift and can be used on iOS, iPadOS, macOS, tvOS, and watchOS.
 
 This Package allows you to send REST requests extremely easily using HTTP/1.1 or HTTP/2. Thanks to Swift 4's Codable support JSON Response and Request objects are fully type validated.
 
 The optional `RestOption` object supports the setting of specific HTTP headers, query parameters and HTTP timeout for each REST request.  
 
-The Package is using HTTP client transport that uses the `URLSession` type from the `Foundation` framework to perform HTTP operations. Therfore it is flexible to add other 
+The Package is using HTTP client transport that uses the `URLSession` type from the `Foundation` framework to perform HTTP operations. It is fully secure as it is using Apple Transport Security (ATS).
+
+It does fit best for  projects that do not want to reinvent the wheel and use a simple, small REST implementation. 
+
+And as it is so easy to understand it easy to improve and extend!!!  
 
 ## Features
 
@@ -16,6 +20,7 @@ The Package is using HTTP client transport that uses the `URLSession` type from 
 - [x] Send custom HTTP headers
 - [x] Change timeout options
 - [x] Fully native Swift API
+- [x] Identity Pinning on CA or Leaf level using ATS
 
 ### Requirements
 
@@ -40,6 +45,24 @@ dependencies: [
 .package(url: "https://github.com/tkausch/SwiftRestRequests", from: "0.9")
 ]
 ```
+
+## Certificate pinning
+
+You might not know but Apple introduced native support for SSL public key pinning in iOS 14. 
+
+If you are not familiar with this native capability I recommend reading Apple’s article [Identity Pinning: How to configure server certificates for your app](https://developer.apple.com/news/?id=g9ejcf8y). Here is a summary:
+
+- You can specify a collection of certificates in your Info.plist that App Transport Security (ATS) expects when connecting to named domains.
+- A pinned CA public key must appear in either an intermediate or root certificate in a certificate chain
+- Pinned keys are always associated with a domain name, and the app will refuse to connect to that domain unless the pinning requirement is met.
+- You can associate multiple public keys with a domain name.
+
+This built-in pinning works well for `URLSession` and therfore as well for SwiftRestRequests. Use it if needed!
+
+### Prefere to use API calls for pinning
+
+However if you prefere API calls for pinning you find `CertificateCAPinning` and `PublicKeyServerPinning` delegates for the `HttpSessionb` in the security extension.
+
 
 ## Write a REST Client API
 
@@ -159,5 +182,7 @@ let (response, httpStatus) =
 print("\(response?.json)"
 
 ```
+
+
 
 

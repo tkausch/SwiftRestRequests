@@ -97,7 +97,7 @@ extension RestApiCallerTests {
 
 extension RestApiCallerTests {
     
-    func testPOSTWithDecodable() async throws {
+    private func makePostOrPutCallWithEncodable(_ method: RestMethod) async throws {
         
         struct HttpBinRequest: Codable, Equatable {
             let key1: String
@@ -115,15 +115,21 @@ extension RestApiCallerTests {
         }
         
         let request = HttpBinRequest(key1: "Hello", key2: 1, key3: 2.0, key4: true, key5: [1,2,3,4,5])
+       
+        var result: (response: HttpBinResponse?, httpStatus: Int)
         
-        let (response, httpStatus) = try await apiCaller.post(request, at: "post", responseType: HttpBinResponse.self)
+        if method == .Post {
+            result = try await apiCaller.post(request, at: "post", responseType: HttpBinResponse.self)
+        } else  {
+            // Postcondition: method == PUT
+            result = try await apiCaller.put(request, at: "put", responseType: HttpBinResponse.self)
+        }
         
-        XCTAssertEqual(httpStatus, 200)
-        XCTAssertEqual(response?.json, request)
-        
+        XCTAssertEqual(result.httpStatus, 200)
+        XCTAssertEqual(result.response?.json, request)
     }
     
-    func testPOSTWithoutDecodable() async throws {
+    private func makePostOrPutCallWithoutDecodable(_ method: RestMethod) async throws {
         struct HttpBinRequest: Codable {
             let key1: String
             let key2: Int
@@ -134,10 +140,32 @@ extension RestApiCallerTests {
         
         let request = HttpBinRequest(key1: "Hello", key2: 1, key3: 2.0, key4: true, key5: [1,2,3,4,5])
         
-        let successStatus = try await apiCaller.post(request, at: "status/204")
+        var successStatus: Int
+        
+        if method == .Post {
+           successStatus = try await apiCaller.post(request, at: "status/204")
+        } else {
+            // Postcondition: method == PUT
+            successStatus = try await apiCaller.put(request, at: "status/204")
+        }
         
         XCTAssertEqual(204, successStatus)
     }
     
+    func testPostWithDecodable() async throws {
+        try await makePostOrPutCallWithEncodable(.Post)
+    }
+
+    func testPutWithDecodable() async throws {
+        try await makePostOrPutCallWithEncodable(.Put)
+    }
+    
+    func testPostWithoutDecodable() async throws {
+        try await makePostOrPutCallWithoutDecodable(.Post)
+    }
+    
+    func testPutWithoutDecodable() async throws {
+        try await makePostOrPutCallWithoutDecodable(.Put)
+    }
     
 }

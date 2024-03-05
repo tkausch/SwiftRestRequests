@@ -35,21 +35,34 @@ public typealias HeaderGenerator = (URL) -> [String : String]?
 /// **NOTE:** Ensure to configure `App Transport Security` appropriately.
 open class RestApiCaller : NSObject {
 
-    private var session: URLSession
-    private var baseUrl: URL
-    private var errorDeserializer: (any Deserializer)?
-
+    let session: URLSession
+    let baseUrl: URL
+    let errorDeserializer: (any Deserializer)?
     
     /// This generator will be called before every useage of this RestController
     public var headerGenerator: HeaderGenerator?
 
     
-    public init(baseUrl: URL, sessionConfig:  URLSessionConfiguration = URLSessionConfiguration.default, errorDeserializer: (any Deserializer)? = nil) {
-        self.baseUrl = baseUrl
-        self.session = URLSession(configuration: sessionConfig)
-        self.errorDeserializer = errorDeserializer
+    /// Convenience initializer to create new `RestApiCaller`instances. Each instance will  create it's own `URLSession` object using the porvided `URLSessionConfiguration`.
+    /// - Parameters:
+    ///   - baseUrl: The base URL to which requests are sent.
+    ///   - sessionConfig: The session coniguration to be used
+    ///   - errorDeserializer: An optional error deserializer that can be used to deserialize generic error JSON.
+    public convenience init(baseUrl: URL, sessionConfig:  URLSessionConfiguration = URLSessionConfiguration.default, errorDeserializer: (any Deserializer)? = nil) {
+        self.init(baseUrl: baseUrl, urlSession: URLSession(configuration: sessionConfig), errorDeserializer: errorDeserializer)
     }
 
+    
+    ///  Creates a fully functional RestApi Caller with full flexiblilty to configure.
+    /// - Parameters:
+    ///   - baseUrl: The base URL to which requests are sent.
+    ///   - urlSession: The session coniguration to be used. Note: You can fully configure this session i.e. using delegates.
+    ///   - errorDeserializer: An optional error deserializer that can be used to deserialize generic error JSON.
+    public init(baseUrl: URL, urlSession: URLSession, errorDeserializer: (any Deserializer)?) {
+        self.baseUrl = baseUrl
+        self.errorDeserializer = errorDeserializer
+        self.session = urlSession
+    }
 
     /// Execute REST data task against specified server endpoint and return data and the corresponding `HTTPURLResponse` instance.
     /// - Parameters:
@@ -150,6 +163,7 @@ open class RestApiCaller : NSObject {
         }
         
     }
+
 
     /// Performs a GET request to the server, capturing the data object type response from the server.
     ///
@@ -276,19 +290,3 @@ open class RestApiCaller : NSObject {
     
 }
 
-
-extension RestApiCaller: URLSessionDelegate {
-    
-    public func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
-        if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust  {
-            guard let serverTrust =  challenge.protectionSpace.serverTrust else {
-                return (URLSession.AuthChallengeDisposition.cancelAuthenticationChallenge, nil)
-            }
-            return (URLSession.AuthChallengeDisposition.useCredential, URLCredential(trust: serverTrust))
-        } else {
-            return (URLSession.AuthChallengeDisposition.performDefaultHandling, nil)
-        }
-    }
-    
-    
-}
