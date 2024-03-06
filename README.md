@@ -5,9 +5,9 @@
 [![Platforms](https://img.shields.io/badge/Platforms-macOS_iOS_tvOS_watchOS_visionOS_Linux-yellowgreen?style=flat-square)](https://img.shields.io/badge/Platforms-macOS_iOS_tvOS_watchOS_vision_OS_Linux-Green?style=flat-square)
 [![Swift Package Manager](https://img.shields.io/badge/Swift_Package_Manager-compatible-orange?style=flat-square)](https://img.shields.io/badge/Swift_Package_Manager-compatible-orange?style=flat-square)
 
-SwiftRestRequests is a modern and simple HTTP/REST client library implemented in Swift. This Package allows you to send REST requests easily and write your own REST API clients. Thanks to Swift 4's Codable support JSON response and request objects are fully type validated.
+SwiftRestRequests is an advanced and user-friendly HTTP/REST client library developed in Swift. This package empowers you to effortlessly send REST requests and craft your custom REST API clients. Leveraging Swift 4's Codable support ensures comprehensive type validation for both JSON response and request objects.
 
-The Package is using HTTP client transport that uses the `URLSession` type from the `Foundation` framework to perform HTTP operations. Therfore it is fully  Apple Transport Security (ATS) compliant. 
+This package employs an HTTP client transport mechanism utilizing the URLSession type from the Foundation framework, ensuring seamless performance of HTTP operations. As a result, it adheres entirely to Apple Transport Security (ATS) standards, providing a secure and compliant solution.
 
 ## Features
 
