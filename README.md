@@ -1,30 +1,29 @@
 # SwiftRestRequests
-SwiftRestRequests is a modern and simple  REST library for Swift and can be used on iOS, iPadOS, macOS, tvOS, and watchOS.
 
-This Package allows you to send REST requests extremely easily using HTTP/1.1 or HTTP/2. Thanks to Swift 4's Codable support JSON Response and Request objects are fully type validated.
+[![Swift](https://img.shields.io/badge/Swift-5.7_5.8_5.9-orange?style=flat-square)](https://img.shields.io/badge/Swift-5.7_5.8_5.9-Orange?style=flat-square)
+[![Platforms](https://img.shields.io/badge/Platforms-macOS_iOS_tvOS_watchOS_visionOS_Linux-yellowgreen?style=flat-square)](https://img.shields.io/badge/Platforms-macOS_iOS_tvOS_watchOS_vision_OS_Linux-Green?style=flat-square)
+[![Swift Package Manager](https://img.shields.io/badge/Swift_Package_Manager-compatible-orange?style=flat-square)](https://img.shields.io/badge/Swift_Package_Manager-compatible-orange?style=flat-square)
 
-The optional `RestOption` object supports the setting of specific HTTP headers, query parameters and HTTP timeout for each REST request.  
+SwiftRestRequests is a modern and simple HTTP/REST client library implemented in Swift. This Package allows you to send REST requests easily and write your own REST API clients. Thanks to Swift 4's Codable support JSON response and request objects are fully type validated.
 
-The Package is using HTTP client transport that uses the `URLSession` type from the `Foundation` framework to perform HTTP operations. It is fully secure as it is using Apple Transport Security (ATS).
-
-It does fit best for  projects that do not want to reinvent the wheel and use a simple, small REST implementation. 
-
-And as it is so easy to understand it easy to improve and extend!!!  
+The Package is using HTTP client transport that uses the `URLSession` type from the `Foundation` framework to perform HTTP operations. Therfore it is fully  Apple Transport Security (ATS) compliant. 
 
 ## Features
 
-- [x] Easily perform asynchronous REST networking calls (GET, POST, PUT, PATCH, or DELETE) that send JSON
+- [x] Easily perform asynchronous REST networking calls `GET, POST, PUT, PATCH, or DELETE` that send JSON
 - [x] Easy API that uses Swift's async/await syntax
-- [x] Natively integrates with Swift's Decodable and Encodable types
+- [x] Natively integrates with Swift's `Decodable` and `Encodable` types
 - [x] HTTP response validation
+- [x] URL Parameter Encoding
 - [x] Send custom HTTP headers
-- [x] Change timeout options
+- [x] Change request timeout options
 - [x] Fully native Swift API
-- [x] Identity Pinning on CA or Leaf level using ATS
+- [x] TLS Certificate and Public Key Pinning
+
 
 ### Requirements
 
-SwiftRestRequests 1.0 and newer works with any of the supported operating systems listed below with the version of Xcode.
+SwiftRestRequests 1.1 and newer works with any of the supported operating systems listed below with the version of Xcode.
 
 - iOS 15.0+
 - tvOS 15.0+
@@ -46,7 +45,7 @@ dependencies: [
 ]
 ```
 
-## Certificate pinning
+### Certificate pinning
 
 You might not know but Apple introduced native support for SSL public key pinning in iOS 14. 
 
@@ -57,11 +56,7 @@ If you are not familiar with this native capability I recommend reading Apple’
 - Pinned keys are always associated with a domain name, and the app will refuse to connect to that domain unless the pinning requirement is met.
 - You can associate multiple public keys with a domain name.
 
-This built-in pinning works well for `URLSession` and therfore as well for SwiftRestRequests. Use it if needed!
-
-### Prefere to use API calls for pinning
-
-However if you prefere API calls for pinning you find `CertificateCAPinning` and `PublicKeyServerPinning` delegates for the `HttpSessionb` in the security extension.
+This built-in pinning works well for `URLSession` and therfore as well for SwiftRestRequests.  However if you prefere API calls for server pinning you find `CertificateCAPinning` and `PublicKeyServerPinning` delegates that can be used together with `HttpSession`.
 
 
 ## Write a REST Client API
@@ -132,8 +127,9 @@ Task {
 
 ## Usage of RestAPICaller 
 
+However it is also possible to use `RestApiCaller` without subclassing and directly call your REST endpoints. This approach is straight forward. 
 
-#### Making a GET Request and getting back a Response object
+### Making a GET Request and getting back a Response object
 
 ```
 struct HttpBinHeaders: Decodable {
@@ -156,11 +152,10 @@ print("HttpStatus: \(httpStatus)")
 print("Url: \(String(describing: response?.url))")
 
 ```
-#### Making a POST Request using a Swift 4 Encodable Request object and getting back a Decodable Response object
+### Making a POST Request using a Swift 4 Encodable Request object and getting back a Decodable Response object
 
 
 ```
-
 struct HttpBinRequest: Encodable {
 	let key1: String
 	let key2: Int
@@ -186,3 +181,4 @@ print("\(response?.json)"
 
 
 
+__
