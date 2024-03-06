@@ -71,21 +71,33 @@ extension RestApiCallerTests {
         XCTAssertEqual(response?.headers.accept, "application/json")
     }
     
-    func testGetWithErrorStatus() async throws {
-        do {
-            
-            let _ = try await apiCaller.get(at: "status/404")
-            XCTFail("Successful call but error is expected")
-            
-        } catch RestError.failedRestCall(_, let status, let error)  {
-            XCTAssertEqual(status, 404)
-            XCTAssertNil(error)
-        } catch {
-                XCTFail("FailedRestCall error is expected")
+    
+    func testGetWithError() async throws {
+        struct HttpBinResponse: Decodable {
+            let url: String
+            let origin: String
+            let headers: HttpBinHeaders
         }
+        
+        do {
+            let (_, _) = try await apiCaller.get(HttpBinResponse.self, at: "status/404")
+            XCTFail("Above call must throw error")
+        } catch RestError.failedRestCall(let httpResponse, let httpStatus, _) {
+            XCTAssertEqual(httpStatus, 404)
+            XCTAssertEqual(httpResponse.statusCode, 404)
+        } catch {
+            XCTFail("RestError.failedRestCall error expected")
+        }
+        
     }
     
-    func testGetWithoutDecodable() async throws {
+    
+    func testGetErrorStatus() async throws {
+        let status = try await apiCaller.get(at: "status/404")
+        XCTAssertEqual(status, 404)
+    }
+    
+    func testGetOkStatus() async throws {
         let  httpStatus = try await apiCaller.get(at: "status/204")
         XCTAssertEqual(httpStatus, 204)
     }

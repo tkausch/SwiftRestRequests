@@ -129,32 +129,51 @@ open class RestApiCaller : NSObject {
     private func makeCall<T: Deserializer>(_ relativePath: String?, httpMethod: RestMethod, payload: Data?, responseDeserializer: T, options: RestOptions) async throws -> (T.ResponseType?, Int) {
         let (data, httpResponse) = try await dataTask(relativePath: relativePath, httpMethod: httpMethod.rawValue, accept: responseDeserializer.acceptHeader, payload: payload, options: options)
         
-        guard !data.isEmpty else {
+        // For requests without deserialization just return status code
+        if type(of: responseDeserializer) == VoidDeserializer.self {
             return (nil, httpResponse.statusCode)
         }
+        
+        let httpStatus = httpResponse.statusCode
+        
+        guard !data.isEmpty  else {
+            
+            if isSuccessHttpStatus(httpStatus) {
+                return (nil, httpStatus)
+            } else {
+                throw RestError.failedRestCall(httpResponse, httpStatus, nil)
+            }
+        }
+        
+        // Postcondition: data is not empty - contains error or response object!
         
         let contentType =  httpResponse.value(forHTTPHeaderField: HttpHeaders.ContentType.rawValue)
         guard  let contentType, let _ = MimeType(rawValue: contentType) else {
             throw RestError.invalidMimeType(contentType)
         }
         
-        // Postcondition: data is there and contenttype is supported
-        let successRange = 200...299
-        if successRange.contains(httpResponse.statusCode)  {
+        // Postcondition: ContentTyp is supported
+        
+        if isSuccessHttpStatus(httpStatus)  {
+            
+            // Postcondition: httpStatus in 200...299
             do {
-                if !data.isEmpty {
+                if httpStatus == 200 {
                     let transformedResponse = try responseDeserializer.deserialize(data)
                     return (transformedResponse, httpResponse.statusCode)
                 } else {
-                    // when no data is there we just return the status code
-                    return (nil, httpResponse.statusCode)
+                    // Postcondition: httpStatus is 201...299
+                    
+                    // Note: we skipt data in this case
+                    return (nil, httpStatus)
                 }
             } catch {
                 throw RestError.malformedResponse(httpResponse, data, error)
             }
         }
         
-        // Postcondition: Unsuccessful call and data COULD contain error json object
+        // Postcondition: httpStatus not 2XX and we have body data
+        // Note: We try to parse it as Error
         do {
             let errorJson = try errorDeserializer?.deserialize(data)
             throw RestError.failedRestCall(httpResponse, httpResponse.statusCode, errorJson)
@@ -164,7 +183,11 @@ open class RestApiCaller : NSObject {
         
     }
 
-
+    
+    private func isSuccessHttpStatus(_ status: Int) -> Bool {
+        return (200...299).contains(status)
+    }
+    
     /// Performs a GET request to the server, capturing the data object type response from the server.
     ///
     /// Note: This is an **asynchronous** call and will return immediately.  The network operation is done in the background.
