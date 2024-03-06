@@ -1,4 +1,4 @@
-![SwiftRestRequests: Smart Networking in Swift](Resources/logo-color.png)
+<img src="Resources/logo-color.png" height="400" />
 
 
 [![Swift](https://img.shields.io/badge/Swift-5.7_5.8_5.9-orange?style=flat-square)](https://img.shields.io/badge/Swift-5.7_5.8_5.9-Orange?style=flat-square)
