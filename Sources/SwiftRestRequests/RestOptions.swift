@@ -34,5 +34,9 @@ public struct RestOptions {
     /// An optional set of query parameters to send with the call.
     public var queryParameters: [String: String]?
     
+    /// The http status codes the service is expecting to throw. Default is nil - all status codes allwed. 
+    /// Note: If services returns another HTTP status code this will triggger an error during the call.
+    public var expectedStatusCodes: [Int]? = nil
+    
     public init() {}
 }
