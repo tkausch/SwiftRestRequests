@@ -1,4 +1,4 @@
-<img src="Resources/logo-color.png" height="400" />
+<img src="Resources/logo-color.png" width="900" />
 
 
 [![Swift](https://img.shields.io/badge/Swift-5.7_5.8_5.9-orange?style=flat-square)](https://img.shields.io/badge/Swift-5.7_5.8_5.9-Orange?style=flat-square)
