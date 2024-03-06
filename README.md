@@ -44,8 +44,7 @@ dependencies: [
 .package(url: "https://github.com/tkausch/SwiftRestRequests", from: "0.9")
 ]
 ```
-
-### Certificate pinning
+### Certificate pinning
 
 You might not know but Apple introduced native support for SSL public key pinning in iOS 14. 
 
