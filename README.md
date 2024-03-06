@@ -35,11 +35,11 @@ SwiftRestRequests 1.1 and newer works with any of the supported operating system
 
 SwiftRestRequests is compatible with the SPM for macOS, iOS, iPadOS, tvOS, and watchOS (not avaiale on Linux at this time). When using XCode 11, the Swift Package Manager is the recommended installation method.
 
-To use in XCode 11+, open your project and go to ```File->Swift Packages->Add Package Dependency...``` and follow along the dialogs. Thats it!
+To use in XCode 11+, open your project and go to `File->Swift Packages->Add Package Dependency...` and follow along the dialogs. Thats it!
 
-If you prefer to add it manually using SPM, just add the SwiftRestRequests dependency to your target in your ```Package.swift``` file.
+If you prefer to add it manually using SPM, just add the SwiftRestRequests dependency to your target in your `Package.swift` file.
 
-```swift
+```
 dependencies: [
 .package(url: "https://github.com/tkausch/SwiftRestRequests", from: "0.9")
 ]
@@ -154,7 +154,6 @@ print("Url: \(String(describing: response?.url))")
 ```
 ### Making a POST Request using a Swift 4 Encodable Request object and getting back a Decodable Response object
 
-
 ```
 struct HttpBinRequest: Encodable {
 	let key1: String
@@ -178,7 +177,3 @@ print("\(response?.json)"
 
 ```
 
-
-
-
-__
