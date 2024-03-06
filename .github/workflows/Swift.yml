@@ -18,13 +18,13 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         swift: ["5.7", "5.8"]
     steps:
-    - uses: swift-actions/setup-swift@v1
-    with:
-      swift-version: ${{ matrix.swift }}
-    - name: Get swift version
+      - uses: swift-actions/setup-swift@v1
+        with:
+          swift-version: ${{ matrix.swift }}
+      - name: Get swift version
         run: swift --version
-    - uses: actions/checkout@v4
-    - name: Build
-      run: swift build -v
-    - name: Run tests
-      run: swift test -v
+      - uses: actions/checkout@v4
+      - name: Build
+        run: swift build -v
+      - name: Run tests
+        run: swift test -v
