@@ -1,5 +1,4 @@
-![SwiftRestRequests: Smart Networking in Swift](https://github.com/tkausch/SwiftRestRequests/Resources/logo-color.png)
-
+# SwiftRestRequests
 
 [![Swift](https://img.shields.io/badge/Swift-5.7_5.8_5.9-orange?style=flat-square)](https://img.shields.io/badge/Swift-5.7_5.8_5.9-Orange?style=flat-square)
 [![Platforms](https://img.shields.io/badge/Platforms-macOS_iOS_tvOS_watchOS_visionOS_Linux-yellowgreen?style=flat-square)](https://img.shields.io/badge/Platforms-macOS_iOS_tvOS_watchOS_vision_OS_Linux-Green?style=flat-square)
@@ -45,8 +44,8 @@ dependencies: [
 .package(url: "https://github.com/tkausch/SwiftRestRequests", from: "0.9")
 ]
 ```
-
 ### Certificate pinning
+
 You might not know but Apple introduced native support for SSL public key pinning in iOS 14. 
 
 If you are not familiar with this native capability I recommend reading Apple’s article [Identity Pinning: How to configure server certificates for your app](https://developer.apple.com/news/?id=g9ejcf8y). Here is a summary:
