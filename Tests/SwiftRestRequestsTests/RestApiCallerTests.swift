@@ -121,7 +121,7 @@ extension RestApiCallerTests {
 
 extension RestApiCallerTests {
     
-    private func makePostOrPutCallWithEncodable(_ method: RestMethod) async throws {
+    private func makePostOrPutCallWithEncodable(_ method: HTTPMethod) async throws {
         
         struct HttpBinRequest: Codable, Equatable {
             let key1: String
@@ -142,7 +142,7 @@ extension RestApiCallerTests {
        
         var result: (response: HttpBinResponse?, httpStatus: Int)
         
-        if method == .Post {
+        if method == .post {
             result = try await apiCaller.post(request, at: "post", responseType: HttpBinResponse.self)
         } else  {
             // Postcondition: method == PUT
@@ -153,7 +153,7 @@ extension RestApiCallerTests {
         XCTAssertEqual(result.response?.json, request)
     }
     
-    private func makePostOrPutCallWithoutDecodable(_ method: RestMethod) async throws {
+    private func makePostOrPutCallWithoutDecodable(_ method: HTTPMethod) async throws {
         struct HttpBinRequest: Codable {
             let key1: String
             let key2: Int
@@ -166,7 +166,7 @@ extension RestApiCallerTests {
         
         var successStatus: Int
         
-        if method == .Post {
+        if method == .post {
            successStatus = try await apiCaller.post(request, at: "status/204")
         } else {
             // Postcondition: method == PUT
@@ -177,19 +177,53 @@ extension RestApiCallerTests {
     }
     
     func testPostWithDecodable() async throws {
-        try await makePostOrPutCallWithEncodable(.Post)
+        try await makePostOrPutCallWithEncodable(.post)
     }
 
     func testPutWithDecodable() async throws {
-        try await makePostOrPutCallWithEncodable(.Put)
+        try await makePostOrPutCallWithEncodable(.put)
     }
     
     func testPostWithoutDecodable() async throws {
-        try await makePostOrPutCallWithoutDecodable(.Post)
+        try await makePostOrPutCallWithoutDecodable(.post)
     }
     
     func testPutWithoutDecodable() async throws {
-        try await makePostOrPutCallWithoutDecodable(.Put)
+        try await makePostOrPutCallWithoutDecodable(.put)
+    }
+    
+}
+
+// MARK: - Check services are only returning expected status codes
+
+extension RestApiCallerTests {
+    
+    func testExpectedStatusCodeReturned() async throws {
+        var options = RestOptions()
+        
+        // define common status codes expected
+        let expectedStatusCodes = [500, 200, 204, 403]
+        options.expectedStatusCodes = expectedStatusCodes
+
+        for statusCode in expectedStatusCodes {
+            let returnedStatus =  try await apiCaller.get(at: "status/\(statusCode)", options: options)
+            XCTAssertEqual(statusCode, returnedStatus)
+        }
+    }
+    
+    func testExpectedStatusCodeNotReturned() async throws {
+        var options = RestOptions()
+        
+        // define common status codes expected
+        let expectedStatusCodes = [500, 200, 204, 403]
+        options.expectedStatusCodes = expectedStatusCodes
+        
+        do {
+            let _ = try await apiCaller.get(at: "status/501", options: options)
+            XCTFail("Above call should throw errror")
+        } catch RestError.unexpectedHttpStatusCode(let statusCode) {
+            XCTAssertEqual(501, statusCode)
+        }
     }
     
 }

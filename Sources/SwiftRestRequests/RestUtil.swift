@@ -22,13 +22,14 @@
 import Foundation
 
 
-/// Supported HTTP methods to exectue  REST requests
-internal enum RestMethod: String {
-    case Post = "POST"
-    case Patch = "PATCH"
-    case Get = "GET"
-    case Put = "PUT"
-    case Delete = "DELETE"
+/// Type representing HTTP methods. Raw `String` value is stored and compared case-sensitively.
+///
+internal enum HTTPMethod: String {
+    case post = "POST"
+    case patch = "PATCH"
+    case get = "GET"
+    case put = "PUT"
+    case delete = "DELETE"
     
 }
 
@@ -40,7 +41,7 @@ internal enum MimeType: String {
     case Void = "*/*"
 }
 
-internal enum HttpHeaders: String {
+internal enum HTTPHeaderKeys: String {
     case ContentType = "Content-Type"
     case Accept = "Accept"
 }
