@@ -21,6 +21,9 @@
 
 import Foundation
 
+
+// MARK: - Protocols used by RestapiCaller
+
 /// Allows users to generate headers before each REST call is made. The headers returned will be COMBINED with
 /// any headers set in the original `RestCaller` call. Any headers returned here will override the values given
 /// in the original call if they have the same name.
@@ -40,6 +43,8 @@ extension URLRequestInterceptor {
     }
 }
 
+// MARK: - The Main class
+
 /// Allows users to create HTTP REST networking calls that deal with JSON.
 ///
 /// **NOTE:** Ensure to configure `App Transport Security` appropriately.
@@ -56,7 +61,10 @@ open class RestApiCaller : NSObject {
     public let headerGenerator: HeaderGenerator?
     
     public let authorizer: URLRequestAuthorizer?
-        
+
+// MARK: Lifecycle
+    
+    
     /// Convenience initializer to create new `RestApiCaller`instances. Each instance will  create it's own `URLSession` object using the porvided `URLSessionConfiguration`.
     /// - Parameters:
     ///   - baseUrl: The base URL to which requests are sent.
@@ -90,17 +98,10 @@ open class RestApiCaller : NSObject {
         }
     }
     
-    /// Add request interceptor to the api caller.
-    /// - Parameter interceptor: The interceptor to be called
-    func registerRequestInterceptor(_ interceptor: URLRequestInterceptor) {
-        if  self.interceptors == nil {
-            self.interceptors = [URLRequestInterceptor]()
-        }
-        interceptors!.append(interceptor)
-    }
+// MARK: Generic request dispatching methods
     
     @inline(__always)
-    private func callInvokeInterceptors(_ request: inout URLRequest) {
+    fileprivate func callInvokeInterceptors(_ request: inout URLRequest) {
         if let interceptors {
             for interceptor in interceptors {
                 interceptor.invokeRequest(request: &request, for: session)
@@ -108,12 +109,63 @@ open class RestApiCaller : NSObject {
         }
     }
     @inline(__always)
-    private func callReceiveInterceptors(_ data: inout Data, _ response: inout URLResponse) {
+    fileprivate func callReceiveInterceptors(_ data: inout Data, _ response: inout URLResponse) {
         if let interceptors {
             // we revers interceptor chain when receiving...
             for interceptor in interceptors.reversed() {
                 interceptor.receiveResponse(data: &data, response: &response, for: session)
             }
+        }
+    }
+    
+    @inline(__always)
+    fileprivate func addPercentEncodeQueryParamsToUrl(url restURL: inout URL, queryParams: [String: String]?) throws {
+        if let queryParams {
+            var queryItems = [URLQueryItem]()
+            for (key, value) in queryParams {
+                queryItems.append(URLQueryItem(name: key, value: value))
+            }
+            if var urlComponents = URLComponents(url: restURL, resolvingAgainstBaseURL: true) {
+                urlComponents.queryItems = queryItems
+                if let restURLWithQuery = urlComponents.url {
+                    restURL = restURLWithQuery
+                } else {
+                    throw RestError.invalidQueryParameter
+                }
+            }
+        }
+    }
+    
+    @inline(__always)
+    fileprivate func insertHttpHeadersToRequest(_ request: inout URLRequest, httpHeaders: [String : String]?, url restURL: URL) {
+      
+        request.setValue(MimeType.ApplicationJson.rawValue, forHTTPHeaderField: HTTPHeaderKeys.Accept.rawValue)
+        if let customHeaders = httpHeaders {
+            for (httpHeaderKey, httpHeaderValue) in customHeaders {
+                request.setValue(httpHeaderValue, forHTTPHeaderField: httpHeaderKey)
+            }
+        }
+        
+        // Append rest endpoint specific headers
+        if let generatedHeaders = headerGenerator?(restURL) {
+            for (httpHeaderKey, httpHeaderValue) in generatedHeaders {
+                request.setValue(httpHeaderValue, forHTTPHeaderField: httpHeaderKey)
+            }
+        }
+    }
+    
+    @inline(__always)
+    fileprivate func validateResponseStatusCodes(_ expectedStatusCodes: [Int]?, _ httpResponse: HTTPURLResponse) throws {
+        if let expectedStatusCodes, !expectedStatusCodes.contains(httpResponse.statusCode) {
+            throw RestError.unexpectedHttpStatusCode(httpResponse.statusCode)
+        }
+    }
+    
+    @inline(__always)
+    fileprivate func addPayloadToRequest( _ request: inout URLRequest, payload: Data?) {
+        if let payloadToSend = payload {
+            request.setValue(MimeType.ApplicationJson.rawValue, forHTTPHeaderField: HTTPHeaderKeys.ContentType.rawValue)
+            request.httpBody = payloadToSend
         }
     }
     
@@ -127,43 +179,26 @@ open class RestApiCaller : NSObject {
     /// - Returns: The data returned by server and the corresponding `HTTPURLResponse`
     private func dataTask(relativePath: String?, httpMethod: String, accept: String, payload: Data?, options: RestOptions) async throws -> (Data, HTTPURLResponse) {
         
-        let restURL: URL;
+        var restURL: URL;
         if let relativeURL = relativePath {
             restURL = baseUrl.appendingPathComponent(relativeURL)
         } else {
             restURL = baseUrl
         }
-
-        // Create URLRequest with default cache policy using the timeout from rest options
+    
+        try addPercentEncodeQueryParamsToUrl(url: &restURL, queryParams: options.queryParameters)
+        
+        // Create URLRequest
         var request = URLRequest(url: restURL, cachePolicy: .useProtocolCachePolicy, timeoutInterval: options.requestTimeoutSeconds)
         request.httpMethod = httpMethod
         
-        
-        // Set general headers from REST option object
-        request.setValue(MimeType.ApplicationJson.rawValue, forHTTPHeaderField: HTTPHeaderKeys.Accept.rawValue)
-        if let customHeaders = options.httpHeaders {
-            for (httpHeaderKey, httpHeaderValue) in customHeaders {
-                request.setValue(httpHeaderValue, forHTTPHeaderField: httpHeaderKey)
-            }
-        }
+        insertHttpHeadersToRequest(&request, httpHeaders: options.httpHeaders, url: restURL)
 
-        // Append rest endpoint specific headers i.e. JWT tokens for authentication
-        if let generatedHeaders = headerGenerator?(restURL) {
-            for (httpHeaderKey, httpHeaderValue) in generatedHeaders {
-                request.setValue(httpHeaderValue, forHTTPHeaderField: httpHeaderKey)
-            }
-        }
+        addPayloadToRequest(&request, payload: payload)
 
-        // set data with json payload ...
-        if let payloadToSend = payload {
-            request.setValue(MimeType.ApplicationJson.rawValue, forHTTPHeaderField: HTTPHeaderKeys.ContentType.rawValue)
-            request.httpBody = payloadToSend
-        }
-
+        // make request and install interceptor hooks
         callInvokeInterceptors(&request)
-        
         var (data, response) = try await session.data(for: request)
-        
         callReceiveInterceptors(&data, &response)
         
         // check http response has a supported type
@@ -171,10 +206,7 @@ open class RestApiCaller : NSObject {
             throw RestError.badResponse(response, data)
         }
         
-        // validate service did return one of the expected status codes
-        if let expectedStatusCodes = options.expectedStatusCodes, !expectedStatusCodes.contains(httpResponse.statusCode) {
-            throw RestError.unexpectedHttpStatusCode(httpResponse.statusCode)
-        }
+        try validateResponseStatusCodes(options.expectedStatusCodes, httpResponse)
         
         return (data, httpResponse)
     }
@@ -199,7 +231,6 @@ open class RestApiCaller : NSObject {
         let httpStatus = httpResponse.statusCode
         
         guard !data.isEmpty  else {
-            
             if isSuccessHttpStatus(httpStatus) {
                 return (nil, httpStatus)
             } else {
@@ -248,6 +279,18 @@ open class RestApiCaller : NSObject {
     
     private func isSuccessHttpStatus(_ status: Int) -> Bool {
         return (200...299).contains(status)
+    }
+    
+    
+// MARK: Public API that can be used from other classes or subclass
+    
+    /// Add request interceptor to the api caller.
+    /// - Parameter interceptor: The interceptor to be called
+    public func registerRequestInterceptor(_ interceptor: URLRequestInterceptor) {
+        if  self.interceptors == nil {
+            self.interceptors = [URLRequestInterceptor]()
+        }
+        interceptors!.append(interceptor)
     }
     
     /// Performs a GET request to the server, capturing the data object type response from the server.
