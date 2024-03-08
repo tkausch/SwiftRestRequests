@@ -21,7 +21,8 @@
 
 import Foundation
 
-
+#if canImport(Security)
+import Security
 
 /// Use this URLSession delegate to implement public key server  pinning.
 /// Note: You  need to assign this object as  delegate for the `URLSession` object.
@@ -57,6 +58,5 @@ open class PublicKeyServerPinning: NSObject, URLSessionDelegate {
     
 }
 
-
-
+#endif
 

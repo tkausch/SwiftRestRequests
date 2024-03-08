@@ -22,6 +22,10 @@
 
 import Foundation
 
+#if canImport(Security)
+import Security
+
+
 
 open class CertificateCAPinning: NSObject, URLSessionDelegate {
     
@@ -56,3 +60,5 @@ open class CertificateCAPinning: NSObject, URLSessionDelegate {
     
     
 }
+
+#endif
