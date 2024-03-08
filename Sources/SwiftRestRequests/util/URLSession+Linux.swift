@@ -1,5 +1,5 @@
 //
-// AuthorizerInterceptor.swift
+// Deserializer.swift
 //
 // This File belongs to SwiftRestRequests
 // Copyright © 2024 Thomas Kausch.
@@ -19,22 +19,23 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+
 import Foundation
 #if canImport(FoundationNetworking)
 import FoundationNetworking
-#endif
 
-
-public class AuthorizerInterceptor: URLRequestInterceptor {
-    
-    public let authorizer: URLRequestAuthorizer
-    
-    init(authorization: URLRequestAuthorizer) {
-        self.authorizer = authorization
+extension URLSession {
+  func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+    return try await withCheckedThrowingContinuation { continuation in
+      let task = self.dataTask(with: request) { (data, response, error) in
+        guard let data = data, let response = response else {
+          let error = error ?? URLError(.badServerResponse)
+          return continuation.resume(throwing: error)
+        }
+        continuation.resume(returning: (data, response))
+      }
+      task.resume()
     }
-    
-    public func invokeRequest(request: inout URLRequest, for session: URLSession) {
-        authorizer.configureAuthorizationHeader(for: &request)
-    }
-    
+  }
 }
+#endif

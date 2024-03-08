@@ -22,6 +22,9 @@
 
 import Foundation
 
+#if os(Linux)
+// no public key pinning implemented
+#else
 
 open class CertificateCAPinning: NSObject, URLSessionDelegate {
     
@@ -56,3 +59,5 @@ open class CertificateCAPinning: NSObject, URLSessionDelegate {
     
     
 }
+
+#endif

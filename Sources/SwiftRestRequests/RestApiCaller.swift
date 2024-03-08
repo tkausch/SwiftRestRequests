@@ -20,6 +20,9 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 
 // MARK: - Protocols used by RestapiCaller
@@ -198,7 +201,7 @@ open class RestApiCaller : NSObject {
 
         // make request and install interceptor hooks
         callInvokeInterceptors(&request)
-        var (data, response) = try await session.data(for: request)
+        var (data, response): (Data, URLResponse) = try await session.data(for: request)
         callReceiveInterceptors(&data, &response)
         
         // check http response has a supported type

@@ -20,8 +20,10 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import Foundation
-import Security
 
+#if os(Linux)
+// no public key pinning implemented
+#else
 
 /// Use this URLSession delegate to implement public key server  pinning.
 /// Note: You  need to assign this object as  delegate for the `URLSession` object.
@@ -56,7 +58,5 @@ open class PublicKeyServerPinning: NSObject, URLSessionDelegate {
     }
     
 }
-
-
-
+#endif
 
