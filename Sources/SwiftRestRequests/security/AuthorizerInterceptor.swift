@@ -21,11 +21,11 @@
 
 import Foundation
 
-public class AuthorizerInterceptor<T: URLRequestAuthorizer>: URLRequestInterceptor {
+public class AuthorizerInterceptor: URLRequestInterceptor {
     
-    public let authorizer: T
+    public let authorizer: URLRequestAuthorizer
     
-    init(authorization: T) {
+    init(authorization: URLRequestAuthorizer) {
         self.authorizer = authorization
     }
     

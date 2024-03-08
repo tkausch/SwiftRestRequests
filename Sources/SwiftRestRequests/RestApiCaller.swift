@@ -64,10 +64,10 @@ open class RestApiCaller : NSObject {
     ///   - errorDeserializer: An optional error deserializer that can be used to deserialize generic error JSON.
     public convenience init(baseUrl: URL, sessionConfig:  
                             URLSessionConfiguration = URLSessionConfiguration.default,
+                            authorizer: URLRequestAuthorizer? = nil,
                             errorDeserializer: (any Deserializer)? = nil,
-                            headerGenerator: HeaderGenerator? = nil,
-                            authorizer: some URLRequestAuthorizer = NoneAuthorizer()) {
-        self.init(baseUrl: baseUrl, urlSession: URLSession(configuration: sessionConfig), errorDeserializer: errorDeserializer, headerGenerator: nil, authorizer: authorizer)
+                            headerGenerator: HeaderGenerator? = nil) {
+        self.init(baseUrl: baseUrl, urlSession: URLSession(configuration: sessionConfig), authorizer: authorizer, errorDeserializer: errorDeserializer, headerGenerator: nil)
     }
 
     
@@ -76,7 +76,7 @@ open class RestApiCaller : NSObject {
     ///   - baseUrl: The base URL to which requests are sent.
     ///   - urlSession: The session coniguration to be used. Note: You can fully configure this session i.e. using delegates.
     ///   - errorDeserializer: An optional error deserializer that can be used to deserialize generic error JSON.
-    public init(baseUrl: URL, urlSession: URLSession, errorDeserializer: (any Deserializer)?, headerGenerator: HeaderGenerator?, authorizer: some URLRequestAuthorizer) {
+    public init(baseUrl: URL, urlSession: URLSession, authorizer: URLRequestAuthorizer?, errorDeserializer: (any Deserializer)?, headerGenerator: HeaderGenerator?) {
         self.baseUrl = baseUrl
         self.errorDeserializer = errorDeserializer
         self.session = urlSession
@@ -84,7 +84,10 @@ open class RestApiCaller : NSObject {
         self.authorizer = authorizer
         
         super.init()
-        registerRequestInterceptor(AuthorizerInterceptor(authorization: authorizer))
+        
+        if let authorizer {
+            registerRequestInterceptor(AuthorizerInterceptor(authorization: authorizer))
+        }
     }
     
     /// Add request interceptor to the api caller.
