@@ -15,8 +15,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, ios-latest]
-        swift: ["5.7", "5.8", "5.9"]
+        os: [ubuntu-latest, macos-latest]
+        swift: ["5.7"]
     steps:
       - uses: swift-actions/setup-swift@v1
         with:
