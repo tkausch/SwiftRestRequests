@@ -201,7 +201,7 @@ open class RestApiCaller : NSObject {
 
         // make request and install interceptor hooks
         callInvokeInterceptors(&request)
-        var (data, response) = try await session.data(for: request)
+        var (data, response): (Data, URLResponse) = try await session.data(for: request)
         callReceiveInterceptors(&data, &response)
         
         // check http response has a supported type
