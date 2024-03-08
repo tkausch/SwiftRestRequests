@@ -22,6 +22,10 @@
 
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 
 /// `URLRequestAuthenticator` will a authentication
 public protocol URLRequestAuthorizer {

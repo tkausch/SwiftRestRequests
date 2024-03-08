@@ -21,6 +21,10 @@
 
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
 
 // MARK: - Protocols used by RestapiCaller
 
