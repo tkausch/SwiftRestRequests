@@ -18,7 +18,9 @@ This package employs an HTTP client transport mechanism utilizing the URLSession
 - [x] URL Parameter Encoding
 - [x] Send custom HTTP headers
 - [x] Change request timeout options
+- [x] Basic and Bearer Authorization
 - [x] Fully native Swift API
+- [x] Check against expected HTTP status codes
 - [x] TLS Certificate and Public Key Pinning
 
 

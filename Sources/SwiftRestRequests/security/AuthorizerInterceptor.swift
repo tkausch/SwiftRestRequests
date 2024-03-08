@@ -1,5 +1,5 @@
 //
-// RestOptions.swift
+// AuthorizerInterceptor.swift
 //
 // This File belongs to SwiftRestRequests
 // Copyright © 2024 Thomas Kausch.
@@ -21,22 +21,16 @@
 
 import Foundation
 
-
-/// Options for `RestController` calls. Allows you to set an expected HTTP status code, HTTP Headers, or to modify the request timeout.
-public struct RestOptions {
-
-    /// An optional set of HTTP Headers to send with the call.
-    public var httpHeaders: [String : String]?
-
-    /// The amount of time in `seconds` until the request times out.
-    public var requestTimeoutSeconds = 60 as TimeInterval
+public class AuthorizerInterceptor: URLRequestInterceptor {
     
-    /// An optional set of query parameters to send with the call.
-    public var queryParameters: [String: String]?
+    public let authorizer: URLRequestAuthorizer
     
-    /// The http status codes the service is expecting to throw. Default is nil - all status codes allwed. 
-    /// Note: If services returns another HTTP status code this will triggger an error during the call.
-    public var expectedStatusCodes: [Int]? 
+    init(authorization: URLRequestAuthorizer) {
+        self.authorizer = authorization
+    }
     
-    public init() {}
+    public func invokeRequest(request: inout URLRequest, for session: URLSession) {
+        authorizer.configureAuthorizationHeader(for: &request)
+    }
+    
 }

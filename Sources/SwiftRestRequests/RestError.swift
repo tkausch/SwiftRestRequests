@@ -33,6 +33,9 @@ public enum RestError: Error {
     /// Indicates that the server responded with an unexpected mime type
     /// - parameter String: The returned mimetype
     case invalidMimeType(String?)
+    
+    /// Indicates that query parameters with key could not be encoded using percent encoding
+    case invalidQueryParameter
 
     /// Indicates the server's response could not be deserialized using the given Deserializer.
     /// - parameter HTTPURLResponse: The HTTPURLResponse from the server
