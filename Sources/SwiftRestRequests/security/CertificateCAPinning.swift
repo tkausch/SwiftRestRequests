@@ -22,10 +22,9 @@
 
 import Foundation
 
-#if canImport(Security)
-import Security
-
-
+#if os(Linux)
+// no public key pinning implemented
+#else
 
 open class CertificateCAPinning: NSObject, URLSessionDelegate {
     
