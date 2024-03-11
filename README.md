@@ -22,6 +22,7 @@ This package employs an HTTP client transport mechanism utilizing the URLSession
 - [x] Fully native Swift API
 - [x] Check against expected HTTP status codes
 - [x] TLS Certificate and Public Key Pinning
+- [x] Support Swift LogLevels for Libraries
 
 
 ### Requirements

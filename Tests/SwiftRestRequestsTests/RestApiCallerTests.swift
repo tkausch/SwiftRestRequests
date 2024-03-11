@@ -41,7 +41,7 @@ final class RestApiCallerTests: XCTestCase {
             XCTFail("Bad test server URL!")
             return
         }
-        apiCaller = RestApiCaller(baseUrl: url)
+        apiCaller = RestApiCaller(baseUrl: url, enableNetworkTrace: true)
     }
     
     func testAcceptHeaderIsSentInRequest() async throws {

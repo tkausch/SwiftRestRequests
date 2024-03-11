@@ -47,7 +47,7 @@ final class RestApiCallerSecurityTests: XCTestCase {
         }
         
         let bearerAuthorizer = BearerReqeustAuthorizer(token: BearerToken)
-        let caller = RestApiCaller(baseUrl: url, authorizer: bearerAuthorizer)
+        let caller = RestApiCaller(baseUrl: url, authorizer: bearerAuthorizer, enableNetworkTrace: true)
         
         let (response, httpStatus) = try await caller.get(HttpBinBearerResponse.self, at: "bearer")
         
@@ -66,7 +66,7 @@ final class RestApiCallerSecurityTests: XCTestCase {
         }
         
         let basicAuthorizer = BasicRequestAuthorizer(username: User, password: Password)
-        let caller = RestApiCaller(baseUrl: url, authorizer: basicAuthorizer)
+        let caller = RestApiCaller(baseUrl: url, authorizer: basicAuthorizer, enableNetworkTrace: true)
         
         let (response, httpStatus) = try await caller.get(HttpBinBasicResponse.self, at: "basic-auth/\(User)/\(Password)")
         
