@@ -37,11 +37,11 @@ public typealias HeaderGenerator = (URL) -> [String : String]?
 /// A request interceptor is used to intercept  REST requests and responses. It can be used to change underlying HTTP  requests or responses.
 public protocol URLRequestInterceptor: AnyObject {
     func invokeRequest(request: inout URLRequest, for session: URLSession);
-    func receiveResponse(data: inout Data, response: inout URLResponse, for session: URLSession);
+    func receiveResponse(data: Data, response: HTTPURLResponse, for session: URLSession);
 }
 
 extension URLRequestInterceptor {
-    public func receiveResponse(data: inout Data, response: inout URLResponse, for session: URLSession) {
+    public func receiveResponse(data: Data, response: HTTPURLResponse, for session: URLSession) {
         // default empty implementation for optional method
     }
 }
@@ -77,8 +77,9 @@ open class RestApiCaller : NSObject {
                             URLSessionConfiguration = URLSessionConfiguration.default,
                             authorizer: URLRequestAuthorizer? = nil,
                             errorDeserializer: (any Deserializer)? = nil,
-                            headerGenerator: HeaderGenerator? = nil) {
-        self.init(baseUrl: baseUrl, urlSession: URLSession(configuration: sessionConfig), authorizer: authorizer, errorDeserializer: errorDeserializer, headerGenerator: nil)
+                            headerGenerator: HeaderGenerator? = nil,
+                            enableNetworkTrace: Bool = false) {
+        self.init(baseUrl: baseUrl, urlSession: URLSession(configuration: sessionConfig), authorizer: authorizer, errorDeserializer: errorDeserializer, headerGenerator: nil, enableNetworkTrace: enableNetworkTrace)
     }
 
     
@@ -87,7 +88,7 @@ open class RestApiCaller : NSObject {
     ///   - baseUrl: The base URL to which requests are sent.
     ///   - urlSession: The session coniguration to be used. Note: You can fully configure this session i.e. using delegates.
     ///   - errorDeserializer: An optional error deserializer that can be used to deserialize generic error JSON.
-    public init(baseUrl: URL, urlSession: URLSession, authorizer: URLRequestAuthorizer?, errorDeserializer: (any Deserializer)?, headerGenerator: HeaderGenerator?) {
+    public init(baseUrl: URL, urlSession: URLSession, authorizer: URLRequestAuthorizer?, errorDeserializer: (any Deserializer)?, headerGenerator: HeaderGenerator?, enableNetworkTrace: Bool) {
         self.baseUrl = baseUrl
         self.errorDeserializer = errorDeserializer
         self.session = urlSession
@@ -99,6 +100,17 @@ open class RestApiCaller : NSObject {
         if let authorizer {
             registerRequestInterceptor(AuthorizerInterceptor(authorization: authorizer))
         }
+        
+        #if os(Linux)
+            if enableNetworkTrace {
+                print("WARNING: Networktracing is NOT supported on Linux!")
+            }
+        #else
+            if enableNetworkTrace {
+                registerRequestInterceptor(TraceNetworkInterceptor())
+            }
+        #endif
+            
     }
     
 // MARK: Generic request dispatching methods
@@ -112,11 +124,11 @@ open class RestApiCaller : NSObject {
         }
     }
     @inline(__always)
-    fileprivate func callReceiveInterceptors(_ data: inout Data, _ response: inout URLResponse) {
+    fileprivate func callReceiveInterceptors(_ data: Data, _ response: HTTPURLResponse) {
         if let interceptors {
             // we revers interceptor chain when receiving...
             for interceptor in interceptors.reversed() {
-                interceptor.receiveResponse(data: &data, response: &response, for: session)
+                interceptor.receiveResponse(data: data, response: response, for: session)
             }
         }
     }
@@ -201,13 +213,15 @@ open class RestApiCaller : NSObject {
 
         // make request and install interceptor hooks
         callInvokeInterceptors(&request)
-        var (data, response): (Data, URLResponse) = try await session.data(for: request)
-        callReceiveInterceptors(&data, &response)
+        let (data, response) = try await session.data(for: request)
+        
         
         // check http response has a supported type
         guard let httpResponse = response as? HTTPURLResponse else {
             throw RestError.badResponse(response, data)
         }
+        
+        callReceiveInterceptors(data, httpResponse)
         
         try validateResponseStatusCodes(options.expectedStatusCodes, httpResponse)
         
