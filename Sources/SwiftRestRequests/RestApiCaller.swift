@@ -101,9 +101,15 @@ open class RestApiCaller : NSObject {
             registerRequestInterceptor(AuthorizerInterceptor(authorization: authorizer))
         }
         
-        if enableNetworkTrace {
-            registerRequestInterceptor(TraceNetworkInterceptor())
-        }
+        #if os(Linux)
+            if enableNetworkTrace {
+                print("WARNING: Networktracing is NOT supported on Linux!")
+            }
+        #else
+            if enableNetworkTrace {
+                registerRequestInterceptor(TraceNetworkInterceptor())
+            }
+        #endif
             
     }
     

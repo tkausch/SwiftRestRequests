@@ -5,6 +5,11 @@
 
 
 import Foundation
+
+#if os(Linux)
+// no network tracing is implemented
+#else
+
 import os
 
 public class TraceNetworkInterceptor: URLRequestInterceptor {
@@ -37,6 +42,8 @@ public class TraceNetworkInterceptor: URLRequestInterceptor {
         logger.trace("Received: \(url) ->  \(status) \n\(responseDebugDescription) \n\(prettyJsonBody)")
     }
 }
+
+#endif
 
 extension Data {
     var prettyPrintedJSONString: String { /// NSString gives us a nice sanitized debugDescription
