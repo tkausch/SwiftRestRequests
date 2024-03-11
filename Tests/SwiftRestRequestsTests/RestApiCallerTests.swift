@@ -227,3 +227,43 @@ extension RestApiCallerTests {
     }
     
 }
+
+
+// MARK: - URL Parameter encoding tests
+
+
+extension RestApiCallerTests {
+    
+    func testURLEncoding() async throws {
+     
+        struct HttpBinGetArgsRequest: Codable {
+            let args: [String: String]
+            let url: String
+        }
+        
+        var options = RestOptions()
+        
+        let params: [String: String] = ["param1": "Dies ist ein Test", "params2": "1.0", "params3": "&% #"]
+        options.queryParameters = params
+        
+        do {
+            let (response, status) = try await apiCaller.get(HttpBinGetArgsRequest.self, at: "get",options: options)
+            
+            XCTAssertEqual(status, 200)
+            XCTAssertNotNil(response?.args)
+            
+            if let receivedParams = response?.args {
+                // validate params are mirrored correctly...
+                for key in params.keys {
+                    XCTAssertEqual(params[key], receivedParams[key])
+                }
+            }
+            
+        } catch {
+            XCTAssertNil(error)
+        }
+        
+    }
+    
+    
+}
