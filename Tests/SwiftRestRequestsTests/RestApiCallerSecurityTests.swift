@@ -28,6 +28,8 @@ final class RestApiCallerSecurityTests: XCTestCase {
     var url: URL!
     
     let BearerToken = "ThisIsAVeryLongBearerToken"
+    let BearerToken2 = "ThisIsAnotherVeryLongBearerToken"
+    
     let User = "User"
     let Password = "Password"
     
@@ -46,15 +48,29 @@ final class RestApiCallerSecurityTests: XCTestCase {
             let token: String
         }
         
-        let bearerAuthorizer = BearerReqeustAuthorizer(token: BearerToken)
-        let caller = RestApiCaller(baseUrl: url, authorizer: bearerAuthorizer, enableNetworkTrace: true)
+        let authorizer = BearerReqeustAuthorizer(token: BearerToken)
+        let caller = RestApiCaller(baseUrl: url, authorizer: authorizer, enableNetworkTrace: true)
         
-        let (response, httpStatus) = try await caller.get(HttpBinBearerResponse.self, at: "bearer")
+        var (response, httpStatus) = try await caller.get(HttpBinBearerResponse.self, at: "bearer")
         
         XCTAssertEqual(httpStatus, 200)
         XCTAssertNotNil(response)
         XCTAssertTrue(response!.authenticated)
         XCTAssertEqual(response!.token, BearerToken)
+        
+        // NOW change bearer token
+        
+        authorizer.token = BearerToken2
+        
+        
+        (response, httpStatus) = try await caller.get(HttpBinBearerResponse.self, at: "bearer")
+        
+        XCTAssertEqual(httpStatus, 200)
+        XCTAssertNotNil(response)
+        XCTAssertTrue(response!.authenticated)
+        XCTAssertEqual(response!.token, BearerToken2)
+        
+        
     }
     
    
