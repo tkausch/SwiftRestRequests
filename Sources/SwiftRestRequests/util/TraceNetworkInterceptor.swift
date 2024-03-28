@@ -40,10 +40,8 @@ public class TraceNetworkInterceptor: URLRequestInterceptor {
     }
     
     public func receiveResponse(data:  Data, response: HTTPURLResponse, for session: URLSession) {
-  
-        let responseHeaders = response.allHeaderFields
-        
-        guard let headerData = try? JSONSerialization.data(withJSONObject: responseHeaders , options: .prettyPrinted),
+
+        guard let headerData = try? JSONSerialization.data(withJSONObject:  response.allHeaderFields, options: .prettyPrinted),
               let prettyJsonHeaders = String(data: headerData , encoding: .utf8) else {
             print("WARNING: Something went wrong while converting headers to JSON data.")
             return
