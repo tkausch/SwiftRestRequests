@@ -1,5 +1,5 @@
 //
-// RestUtil.swift
+// HttpUtil.swift
 //
 // This File belongs to SwiftRestRequests
 // Copyright © 2024 Thomas Kausch.
@@ -45,3 +45,6 @@ internal enum HTTPHeaderKeys: String {
     case ContentType = "Content-Type"
     case Accept = "Accept"
 }
+
+
+

@@ -50,7 +50,7 @@ public enum RestError: Error {
     /// - parameter HTTPURLResponse: The HTTPURLResponse from the server
     /// - parameter Int: The returned HTTP error status
     /// - parameter Error: The returned json error object
-    case failedRestCall(HTTPURLResponse, Int, Any?)
+    case failedRestCall(HTTPURLResponse, HTTPStatusCode, error: Any?)
     
     /// Indicates the service the service did return un unexpected HTTP status code.
     /// Note: You can set the expected HTTP status codes in the RestOptions. If this list is nil all status codes are allowed.

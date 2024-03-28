@@ -36,7 +36,7 @@ public struct RestOptions {
     
     /// The http status codes the service is expecting to throw. Default is nil - all status codes allwed. 
     /// Note: If services returns another HTTP status code this will triggger an error during the call.
-    public var expectedStatusCodes: [Int]? 
+    public var expectedStatusCodes: [HTTPStatusCode]?
     
     public init() {}
 }
