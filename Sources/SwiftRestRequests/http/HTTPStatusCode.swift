@@ -20,6 +20,9 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 import Foundation
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 
 /// This is a list of Hypertext Transfer Protocol (HTTP) response status codes.
@@ -305,7 +308,7 @@ public enum HTTPStatusCode: Int, Encodable, Decodable  {
 extension HTTPURLResponse {
     
     var status: HTTPStatusCode {
-        return HTTPStatusCode(rawValue: statusCode) ?? HTTPStatusCode.undefined
+        return HTTPStatusCode(rawValue: self.statusCode) ?? HTTPStatusCode.undefined
     }
  
 }
