@@ -56,7 +56,7 @@ final class RestApiCallerTests: XCTestCase {
         
         let (response, httpStatus) = try await apiCaller.get(HttpHeadersResponse.self, at: "headers")
         
-        XCTAssertEqual(httpStatus, 200)
+        XCTAssertEqual(httpStatus, .ok)
         XCTAssertNotNil(response)
         XCTAssertEqual(response!.headers.Accept, MimeType.ApplicationJson.rawValue)
     }
@@ -79,7 +79,7 @@ extension RestApiCallerTests {
         
         let (response, httpStatus) = try await apiCaller.get(HttpBinResponse.self, at: "get")
         
-        XCTAssertEqual(httpStatus, 200)
+        XCTAssertEqual(httpStatus, .ok)
         XCTAssertEqual(response?.url, "https://httpbin.org/get")
         XCTAssertEqual(response?.headers.accept, "application/json")
     }
@@ -96,8 +96,8 @@ extension RestApiCallerTests {
             let (_, _) = try await apiCaller.get(HttpBinResponse.self, at: "status/404")
             XCTFail("Above call must throw error")
         } catch RestError.failedRestCall(let httpResponse, let httpStatus, _) {
-            XCTAssertEqual(httpStatus, 404)
-            XCTAssertEqual(httpResponse.statusCode, 404)
+            XCTAssertEqual(httpStatus, .notFound)
+            XCTAssertEqual(httpResponse.status, .notFound)
         } catch {
             XCTFail("RestError.failedRestCall error expected")
         }
@@ -107,12 +107,12 @@ extension RestApiCallerTests {
     
     func testGetErrorStatus() async throws {
         let status = try await apiCaller.get(at: "status/404")
-        XCTAssertEqual(status, 404)
+        XCTAssertEqual(status, .notFound)
     }
     
     func testGetOkStatus() async throws {
-        let  httpStatus = try await apiCaller.get(at: "status/204")
-        XCTAssertEqual(httpStatus, 204)
+        let  status = try await apiCaller.get(at: "status/204")
+        XCTAssertEqual(status, .noContent)
     }
     
 }
@@ -140,7 +140,7 @@ extension RestApiCallerTests {
         
         let request = HttpBinRequest(key1: "Hello", key2: 1, key3: 2.0, key4: true, key5: [1,2,3,4,5])
        
-        var result: (response: HttpBinResponse?, httpStatus: Int)
+        var result: (response: HttpBinResponse?, httpStatus: HTTPStatusCode)
         
         if method == .post {
             result = try await apiCaller.post(request, at: "post", responseType: HttpBinResponse.self)
@@ -149,7 +149,7 @@ extension RestApiCallerTests {
             result = try await apiCaller.put(request, at: "put", responseType: HttpBinResponse.self)
         }
         
-        XCTAssertEqual(result.httpStatus, 200)
+        XCTAssertEqual(result.httpStatus, .ok)
         XCTAssertEqual(result.response?.json, request)
     }
     
@@ -164,16 +164,16 @@ extension RestApiCallerTests {
         
         let request = HttpBinRequest(key1: "Hello", key2: 1, key3: 2.0, key4: true, key5: [1,2,3,4,5])
         
-        var successStatus: Int
+        var status: HTTPStatusCode
         
         if method == .post {
-           successStatus = try await apiCaller.post(request, at: "status/204")
+           status = try await apiCaller.post(request, at: "status/204")
         } else {
             // Postcondition: method == PUT
-            successStatus = try await apiCaller.put(request, at: "status/204")
+            status = try await apiCaller.put(request, at: "status/204")
         }
         
-        XCTAssertEqual(204, successStatus)
+        XCTAssertEqual(status, .noContent)
     }
     
     func testPostWithDecodable() async throws {
@@ -202,11 +202,11 @@ extension RestApiCallerTests {
         var options = RestOptions()
         
         // define common status codes expected
-        let expectedStatusCodes = [500, 200, 204, 403]
+        let expectedStatusCodes: [HTTPStatusCode] = [.internalServerError, .ok, .noContent, .forbidden]
         options.expectedStatusCodes = expectedStatusCodes
 
         for statusCode in expectedStatusCodes {
-            let returnedStatus =  try await apiCaller.get(at: "status/\(statusCode)", options: options)
+            let returnedStatus =  try await apiCaller.get(at: "status/\(statusCode.rawValue)", options: options)
             XCTAssertEqual(statusCode, returnedStatus)
         }
     }
@@ -215,7 +215,7 @@ extension RestApiCallerTests {
         var options = RestOptions()
         
         // define common status codes expected
-        let expectedStatusCodes = [500, 200, 204, 403]
+        let expectedStatusCodes: [HTTPStatusCode] = [.internalServerError, .ok, .noContent, .forbidden]
         options.expectedStatusCodes = expectedStatusCodes
         
         do {
@@ -225,5 +225,45 @@ extension RestApiCallerTests {
             XCTAssertEqual(501, statusCode)
         }
     }
+    
+}
+
+
+// MARK: - URL Parameter encoding tests
+
+
+extension RestApiCallerTests {
+    
+    func testURLEncoding() async throws {
+     
+        struct HttpBinGetArgsRequest: Codable {
+            let args: [String: String]
+            let url: String
+        }
+        
+        var options = RestOptions()
+        
+        let params: [String: String] = ["param1": "DiesisteinTest", "params2": "1.0", "params3": "&%#"]
+        options.queryParameters = params
+        
+        do {
+            let (response, status) = try await apiCaller.get(HttpBinGetArgsRequest.self, at: "get",options: options)
+            
+            XCTAssertEqual(status, .ok)
+            XCTAssertNotNil(response?.args)
+            
+            if let receivedArgs = response?.args {
+                // validate params are mirrored correctly...
+                for key in params.keys {
+                    XCTAssertEqual(params[key], receivedArgs[key])
+                }
+            }
+            
+        } catch {
+            XCTAssertNil(error)
+        }
+        
+    }
+    
     
 }

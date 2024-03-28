@@ -116,7 +116,7 @@ open class RestApiCaller : NSObject {
 // MARK: Generic request dispatching methods
     
     @inline(__always)
-    fileprivate func callInvokeInterceptors(_ request: inout URLRequest) {
+    private func callInvokeInterceptors(_ request: inout URLRequest) {
         if let interceptors {
             for interceptor in interceptors {
                 interceptor.invokeRequest(request: &request, for: session)
@@ -124,7 +124,7 @@ open class RestApiCaller : NSObject {
         }
     }
     @inline(__always)
-    fileprivate func callReceiveInterceptors(_ data: Data, _ response: HTTPURLResponse) {
+    private func callReceiveInterceptors(_ data: Data, _ response: HTTPURLResponse) {
         if let interceptors {
             // we revers interceptor chain when receiving...
             for interceptor in interceptors.reversed() {
@@ -134,7 +134,7 @@ open class RestApiCaller : NSObject {
     }
     
     @inline(__always)
-    fileprivate func addPercentEncodeQueryParamsToUrl(url restURL: inout URL, queryParams: [String: String]?) throws {
+    private func addPercentEncodeQueryParamsToUrl(url restURL: inout URL, queryParams: [String: String]?) throws {
         if let queryParams {
             var queryItems = [URLQueryItem]()
             for (key, value) in queryParams {
@@ -152,7 +152,7 @@ open class RestApiCaller : NSObject {
     }
     
     @inline(__always)
-    fileprivate func insertHttpHeadersToRequest(_ request: inout URLRequest, httpHeaders: [String : String]?, url restURL: URL) {
+    private func insertHttpHeadersToRequest(_ request: inout URLRequest, httpHeaders: [String : String]?, url restURL: URL) {
       
         request.setValue(MimeType.ApplicationJson.rawValue, forHTTPHeaderField: HTTPHeaderKeys.Accept.rawValue)
         if let customHeaders = httpHeaders {
@@ -170,14 +170,14 @@ open class RestApiCaller : NSObject {
     }
     
     @inline(__always)
-    fileprivate func validateResponseStatusCodes(_ expectedStatusCodes: [Int]?, _ httpResponse: HTTPURLResponse) throws {
-        if let expectedStatusCodes, !expectedStatusCodes.contains(httpResponse.statusCode) {
+    private func validateResponseStatusCodes(_ expectedStatusCodes: [HTTPStatusCode]?, _ httpResponse: HTTPURLResponse) throws {
+        if let expectedStatusCodes, !expectedStatusCodes.contains(httpResponse.status) {
             throw RestError.unexpectedHttpStatusCode(httpResponse.statusCode)
         }
     }
     
     @inline(__always)
-    fileprivate func addPayloadToRequest( _ request: inout URLRequest, payload: Data?) {
+    private func addPayloadToRequest( _ request: inout URLRequest, payload: Data?) {
         if let payloadToSend = payload {
             request.setValue(MimeType.ApplicationJson.rawValue, forHTTPHeaderField: HTTPHeaderKeys.ContentType.rawValue)
             request.httpBody = payloadToSend
@@ -237,21 +237,21 @@ open class RestApiCaller : NSObject {
     ///   - payload: The JSON payload to be sent to server in binary format
     ///   - options: Rest options to use for the data task i.e. timeout
     /// - Returns: The data returned by server and the corresponding `HTTPURLResponse`
-    private func makeCall<T: Deserializer>(_ relativePath: String?, httpMethod: HTTPMethod, payload: Data?, responseDeserializer: T, options: RestOptions) async throws -> (T.ResponseType?, Int) {
+    private func makeCall<T: Deserializer>(_ relativePath: String?, httpMethod: HTTPMethod, payload: Data?, responseDeserializer: T, options: RestOptions) async throws -> (T.ResponseType?, HTTPStatusCode) {
         let (data, httpResponse) = try await dataTask(relativePath: relativePath, httpMethod: httpMethod.rawValue, accept: responseDeserializer.acceptHeader, payload: payload, options: options)
         
         // For requests without deserialization just return status code
         if type(of: responseDeserializer) == VoidDeserializer.self {
-            return (nil, httpResponse.statusCode)
+            return (nil, httpResponse.status)
         }
         
-        let httpStatus = httpResponse.statusCode
+        let httpStatus = httpResponse.status
         
         guard !data.isEmpty  else {
-            if isSuccessHttpStatus(httpStatus) {
+            if httpStatus.type == .success {
                 return (nil, httpStatus)
             } else {
-                throw RestError.failedRestCall(httpResponse, httpStatus, nil)
+                throw RestError.failedRestCall(httpResponse, httpStatus, error: nil)
             }
         }
         
@@ -264,13 +264,13 @@ open class RestApiCaller : NSObject {
         
         // Postcondition: ContentTyp is supported
         
-        if isSuccessHttpStatus(httpStatus)  {
+        if httpStatus.type == .success  {
             
             // Postcondition: httpStatus in 200...299
             do {
-                if httpStatus == 200 {
+                if httpStatus == .ok {
                     let transformedResponse = try responseDeserializer.deserialize(data)
-                    return (transformedResponse, httpResponse.statusCode)
+                    return (transformedResponse, httpResponse.status)
                 } else {
                     // Postcondition: httpStatus is 201...299
                     
@@ -286,17 +286,13 @@ open class RestApiCaller : NSObject {
         // Note: We try to parse it as Error
         do {
             let errorJson = try errorDeserializer?.deserialize(data)
-            throw RestError.failedRestCall(httpResponse, httpResponse.statusCode, errorJson)
+            throw RestError.failedRestCall(httpResponse, httpStatus, error: errorJson)
         } catch {
             throw RestError.malformedResponse(httpResponse, data, error)
         }
         
     }
 
-    
-    private func isSuccessHttpStatus(_ status: Int) -> Bool {
-        return (200...299).contains(status)
-    }
     
     
 // MARK: Public API that can be used from other classes or subclass
@@ -318,7 +314,7 @@ open class RestApiCaller : NSObject {
     /// - parameter relativePath: An **optional** parameter of a relative path of this inscatnaces main URL as setup at when created.
     /// - parameter options: An **optional** parameter of a `RestOptions` struct containing any header fields to include with the call or a different expected status code.
     /// - returns: A  `Decodable` type of `D` object that was returned from the server or nil together with returned successful httpStatus.
-    public func get<D: Decodable>(_ type: D.Type, at relativePath: String? = nil, options: RestOptions = RestOptions()) async throws -> (D?, Int) {
+    public func get<D: Decodable>(_ type: D.Type, at relativePath: String? = nil, options: RestOptions = RestOptions()) async throws -> (D?, HTTPStatusCode) {
         let decodableDeserializer = DecodableDeserializer<D>()
         return try await makeCall(relativePath, httpMethod: .get, payload: nil, responseDeserializer: decodableDeserializer, options: options)
     }
@@ -331,7 +327,7 @@ open class RestApiCaller : NSObject {
     /// - parameter relativePath: An **optional** parameter of a relative path of this inscatnaces main URL as setup at when created.
     /// - parameter options: An **optional** parameter of a `RestOptions` struct containing any header fields to include with the call or a different expected status code.
     /// - returns: The successful HTTP response status.
-    public func get(at relativePath: String? = nil, options: RestOptions = RestOptions()) async throws -> Int {
+    public func get(at relativePath: String? = nil, options: RestOptions = RestOptions()) async throws -> HTTPStatusCode {
         let decodableDeserializer = VoidDeserializer()
         let ( _ , httpStatus) = try await makeCall(relativePath, httpMethod: .get, payload: nil, responseDeserializer: decodableDeserializer, options: options)
         return httpStatus
@@ -346,7 +342,7 @@ open class RestApiCaller : NSObject {
     /// - parameter responseType: The type of object this get call returns. This type must conform to `Decodable`
     /// - parameter options: An **optional** parameter of a `RestOptions` struct containing any header fields to include with the call or a different expected status code.
     /// - returns: A  `Decodable` tyoe of `D` object that was returned from the server or nil together with returned successful httpStatus.
-    public func post<E: Encodable, D: Decodable>(_ encodable: E, at relativePath: String? = nil, responseType type: D.Type, options: RestOptions = RestOptions()) async throws -> (D?, Int) {
+    public func post<E: Encodable, D: Decodable>(_ encodable: E, at relativePath: String? = nil, responseType type: D.Type, options: RestOptions = RestOptions()) async throws -> (D?, HTTPStatusCode) {
         let payload = try JSONEncoder().encode(encodable)
         let decodableDeserializer = DecodableDeserializer<D>()
         return try await makeCall(relativePath, httpMethod: .post, payload: payload, responseDeserializer: decodableDeserializer, options: options)
@@ -362,7 +358,7 @@ open class RestApiCaller : NSObject {
     /// - parameter responseType: The type of object this get call returns. This type must conform to `Decodable`
     /// - parameter options: An **optional** parameter of a `RestOptions` struct containing any header fields to include with the call or a different expected status code.
     /// - returns: The successful HTTP response status.
-    public func post<E: Encodable>(_ encodable: E, at relativePath: String? = nil, options: RestOptions = RestOptions()) async throws -> Int {
+    public func post<E: Encodable>(_ encodable: E, at relativePath: String? = nil, options: RestOptions = RestOptions()) async throws -> HTTPStatusCode {
         let payload = try JSONEncoder().encode(encodable)
         let decodableDeserializer = VoidDeserializer()
         let ( _ , httpStatus) = try await makeCall(relativePath, httpMethod: .post, payload: payload, responseDeserializer: decodableDeserializer, options: options)
@@ -380,7 +376,7 @@ open class RestApiCaller : NSObject {
     /// - parameter responseType: The type of object this get call returns. This type must conform to `Decodable`
     /// - parameter options: An **optional** parameter of a `RestOptions` struct containing any header fields to include with the call or a different expected status code.
     /// - returns: A  `Decodable` tyoe of `D` object that was returned from the server or nil together with returned successful httpStatus.
-    public func put<E: Encodable, D: Decodable>(_ encodable: E, at relativePath: String? = nil, responseType type: D.Type, options: RestOptions = RestOptions()) async throws -> (D?, Int) {
+    public func put<E: Encodable, D: Decodable>(_ encodable: E, at relativePath: String? = nil, responseType type: D.Type, options: RestOptions = RestOptions()) async throws -> (D?, HTTPStatusCode) {
         let payload = try JSONEncoder().encode(encodable)
         let decodableDeserializer = DecodableDeserializer<D>()
         return try await makeCall(relativePath, httpMethod: .put, payload: payload, responseDeserializer: decodableDeserializer, options: options)
@@ -395,7 +391,7 @@ open class RestApiCaller : NSObject {
     /// - parameter responseType: The type of object this get call returns. This type must conform to `Decodable`
     /// - parameter options: An **optional** parameter of a `RestOptions` struct containing any header fields to include with the call or a different expected status code.
     /// - returns: The successful HTTP response status.
-    public func put<E: Encodable>(_ encodable: E, at relativePath: String? = nil, options: RestOptions = RestOptions()) async throws ->  Int {
+    public func put<E: Encodable>(_ encodable: E, at relativePath: String? = nil, options: RestOptions = RestOptions()) async throws ->  HTTPStatusCode {
         let payload = try JSONEncoder().encode(encodable)
         let voidDeserializer = VoidDeserializer()
         let (_, httpStatus) = try await makeCall(relativePath, httpMethod: .put, payload: payload, responseDeserializer: voidDeserializer, options: options)
@@ -412,7 +408,7 @@ open class RestApiCaller : NSObject {
     /// - parameter responseType: The type of object this get call returns. This type must conform to `Decodable`
     /// - parameter options: An **optional** parameter of a `RestOptions` struct containing any header fields to include with the call or a different expected status code.
     /// - returns: A  `Decodable` tyoe of `D` object that was returned from the server or nil together with returned successful httpStatus.
-    public func delete<E: Encodable, D: Decodable>(_ encodable: E, at relativePath: String? = nil, responseType type: D.Type, options: RestOptions = RestOptions()) async throws -> (D?, Int) {
+    public func delete<E: Encodable, D: Decodable>(_ encodable: E, at relativePath: String? = nil, responseType type: D.Type, options: RestOptions = RestOptions()) async throws -> (D?, HTTPStatusCode) {
         let payload = try JSONEncoder().encode(encodable)
         let decodableDeserializer = DecodableDeserializer<D>()
         return try await makeCall(relativePath, httpMethod: .delete, payload: payload, responseDeserializer: decodableDeserializer, options: options)
@@ -427,7 +423,7 @@ open class RestApiCaller : NSObject {
     /// - parameter responseType: The type of object this get call returns. This type must conform to `Decodable`
     /// - parameter options: An **optional** parameter of a `RestOptions` struct containing any header fields to include with the call or a different expected status code.
     /// - returns: A  `Decodable` tyoe of `D` object that was returned from the server or nil together with returned successful httpStatus.
-    public func patch<E: Encodable, D: Decodable>(_ encodable: E, at relativePath: String? = nil, responseType type: D.Type, options: RestOptions = RestOptions()) async throws -> (D?, Int)  {
+    public func patch<E: Encodable, D: Decodable>(_ encodable: E, at relativePath: String? = nil, responseType type: D.Type, options: RestOptions = RestOptions()) async throws -> (D?, HTTPStatusCode)  {
         let payload = try JSONEncoder().encode(encodable)
         let decodableDeserializer = DecodableDeserializer<D>()
         return try await makeCall(relativePath, httpMethod: .patch, payload: payload, responseDeserializer: decodableDeserializer, options: options)

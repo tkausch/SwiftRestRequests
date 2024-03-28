@@ -53,7 +53,7 @@ final class RestApiCallerSecurityTests: XCTestCase {
         
         var (response, httpStatus) = try await caller.get(HttpBinBearerResponse.self, at: "bearer")
         
-        XCTAssertEqual(httpStatus, 200)
+        XCTAssertEqual(httpStatus, .ok)
         XCTAssertNotNil(response)
         XCTAssertTrue(response!.authenticated)
         XCTAssertEqual(response!.token, BearerToken)
@@ -65,7 +65,7 @@ final class RestApiCallerSecurityTests: XCTestCase {
         
         (response, httpStatus) = try await caller.get(HttpBinBearerResponse.self, at: "bearer")
         
-        XCTAssertEqual(httpStatus, 200)
+        XCTAssertEqual(httpStatus, .ok)
         XCTAssertNotNil(response)
         XCTAssertTrue(response!.authenticated)
         XCTAssertEqual(response!.token, BearerToken2)
@@ -86,7 +86,7 @@ final class RestApiCallerSecurityTests: XCTestCase {
         
         let (response, httpStatus) = try await caller.get(HttpBinBasicResponse.self, at: "basic-auth/\(User)/\(Password)")
         
-        XCTAssertEqual(httpStatus, 200)
+        XCTAssertEqual(httpStatus, .ok)
         XCTAssertNotNil(response)
         XCTAssertTrue(response!.authenticated)
         XCTAssertEqual(response!.user, User)
