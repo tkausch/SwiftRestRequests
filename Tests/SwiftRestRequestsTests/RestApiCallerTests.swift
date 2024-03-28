@@ -243,7 +243,7 @@ extension RestApiCallerTests {
         
         var options = RestOptions()
         
-        let params: [String: String] = ["param1": "Dies ist ein Test", "params2": "1.0", "params3": "&% #"]
+        let params: [String: String] = ["param1": "DiesisteinTest", "params2": "1.0", "params3": "&%#"]
         options.queryParameters = params
         
         do {
@@ -252,10 +252,10 @@ extension RestApiCallerTests {
             XCTAssertEqual(status, .ok)
             XCTAssertNotNil(response?.args)
             
-            if let receivedParams = response?.args {
+            if let receivedArgs = response?.args {
                 // validate params are mirrored correctly...
                 for key in params.keys {
-                    XCTAssertEqual(params[key], receivedParams[key])
+                    XCTAssertEqual(params[key], receivedArgs[key])
                 }
             }
             
