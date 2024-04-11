@@ -31,7 +31,7 @@ import FoundationNetworking
 public enum HTTPStatusCode: Int, Encodable, Decodable  {
     
     /// The response class representation of status codes, these get grouped by their first digit.
-    enum StatusType {
+    public enum StatusType {
         
         /// - informational: This class of status code indicates a provisional response, consisting only of the Status-Line and optional headers, and is terminated by an empty line.
         case informational
@@ -276,7 +276,7 @@ public enum HTTPStatusCode: Int, Encodable, Decodable  {
  
     
     /// The class (or group) which the status code belongs to.
-    var type: StatusType {
+    public var type: StatusType {
         
         switch self.rawValue {
             
