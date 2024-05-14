@@ -239,58 +239,58 @@ open class RestApiCaller : NSObject {
     /// - Returns: The data returned by server and the corresponding `HTTPURLResponse`
     private func makeCall<T: Deserializer>(_ relativePath: String?, httpMethod: HTTPMethod, payload: Data?, responseDeserializer: T, options: RestOptions) async throws -> (T.ResponseType?, HTTPStatusCode) {
         let (data, httpResponse) = try await dataTask(relativePath: relativePath, httpMethod: httpMethod.rawValue, accept: responseDeserializer.acceptHeader, payload: payload, options: options)
-        
-        // For requests without deserialization just return status code
-        if type(of: responseDeserializer) == VoidDeserializer.self {
-            return (nil, httpResponse.status)
-        }
-        
+       
         let httpStatus = httpResponse.status
         
-        guard !data.isEmpty  else {
+        // For requests without deserialization and no error just return the status
+        if type(of: responseDeserializer) == VoidDeserializer.self {
             if httpStatus.type == .success {
-                return (nil, httpStatus)
-            } else {
-                throw RestError.failedRestCall(httpResponse, httpStatus, error: nil)
+                return (nil, httpResponse.status)
             }
         }
         
-        // Postcondition: data is not empty - contains error or response object!
+        guard !data.isEmpty  else {
+            throw RestError.failedRestCall(httpResponse, httpStatus, error: nil)
+        }
+        
+        // Postcondition: We have a response object or  error that needs to be parsed!
         
         let contentType =  httpResponse.value(forHTTPHeaderField: HTTPHeaderKeys.ContentType.rawValue)
         guard  let contentType, let _ = MimeType(rawValue: contentType) else {
             throw RestError.invalidMimeType(contentType)
         }
         
-        // Postcondition: ContentTyp is supported
+        // Postcondition: Response or error ContentTyp is supported
         
         if httpStatus.type == .success  {
             
             // Postcondition: httpStatus in 200...299
-            do {
-                if httpStatus == .ok {
+            if httpStatus == .ok {
+                // Postcondition: httpStatus is 200 we need to deserialize
+                do {
                     let transformedResponse = try responseDeserializer.deserialize(data)
                     return (transformedResponse, httpResponse.status)
-                } else {
-                    // Postcondition: httpStatus is 201...299
-                    
-                    // Note: we skipt data in this case
-                    return (nil, httpStatus)
+                } catch {
+                    throw RestError.malformedResponse(httpResponse, data, error)
                 }
+            } else {
+                // Postcondition: httpStatus is 201...299
+                // Note: we skipt data in this case
+                return (nil, httpStatus)
+            }
+            
+        } else {
+            
+            // Postcondition: httpStatus not 2XX. We have an error and error data!
+            do {
+                let errorJson = try errorDeserializer?.deserialize(data)
+                throw RestError.failedRestCall(httpResponse, httpStatus, error: errorJson)
             } catch {
                 throw RestError.malformedResponse(httpResponse, data, error)
             }
+            
         }
-        
-        // Postcondition: httpStatus not 2XX and we have body data
-        // Note: We try to parse it as Error
-        do {
-            let errorJson = try errorDeserializer?.deserialize(data)
-            throw RestError.failedRestCall(httpResponse, httpStatus, error: errorJson)
-        } catch {
-            throw RestError.malformedResponse(httpResponse, data, error)
-        }
-        
+            
     }
 
     

@@ -106,8 +106,11 @@ extension RestApiCallerTests {
     
     
     func testGetErrorStatus() async throws {
-        let status = try await apiCaller.get(at: "status/404")
-        XCTAssertEqual(status, .notFound)
+        do {
+            let status = try await apiCaller.get(at: "status/404")
+        } catch RestError.failedRestCall(let response, let statusCode, _ ){
+            XCTAssertEqual(statusCode, .notFound)
+        }
     }
     
     func testGetOkStatus() async throws {
@@ -202,12 +205,16 @@ extension RestApiCallerTests {
         var options = RestOptions()
         
         // define common status codes expected
-        let expectedStatusCodes: [HTTPStatusCode] = [.internalServerError, .ok, .noContent, .forbidden]
+        let expectedStatusCodes: [HTTPStatusCode] = [.internalServerError, .ok, .noContent, .forbidden, .noContent]
         options.expectedStatusCodes = expectedStatusCodes
 
         for statusCode in expectedStatusCodes {
-            let returnedStatus =  try await apiCaller.get(at: "status/\(statusCode.rawValue)", options: options)
-            XCTAssertEqual(statusCode, returnedStatus)
+            do {
+                let returnedStatus =  try await apiCaller.get(at: "status/\(statusCode.rawValue)", options: options)
+                XCTAssertEqual(statusCode, returnedStatus)
+            } catch RestError.failedRestCall(let response, let errorStatus, _ ) {
+                XCTAssertEqual(statusCode, errorStatus)
+            }
         }
     }
     
