@@ -281,13 +281,17 @@ open class RestApiCaller : NSObject {
             
         } else {
             
-            // Postcondition: httpStatus not 2XX. We have an error and error data!
+            // Postcondition: httpStatus not 2XX. We have an error and error data
+            var failedRestCallError: RestError
+            
             do {
                 let errorJson = try errorDeserializer?.deserialize(data)
-                throw RestError.failedRestCall(httpResponse, httpStatus, error: errorJson)
+                failedRestCallError =  RestError.failedRestCall(httpResponse, httpStatus, error: errorJson)
             } catch {
                 throw RestError.malformedResponse(httpResponse, data, error)
             }
+            
+            throw failedRestCallError
             
         }
             
