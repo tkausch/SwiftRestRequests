@@ -107,7 +107,7 @@ open class RestApiCaller : NSObject {
             }
         #else
             if enableNetworkTrace {
-                registerRequestInterceptor(TraceNetworkInterceptor())
+                registerRequestInterceptor(LogNetworkInterceptor())
             }
         #endif
             
