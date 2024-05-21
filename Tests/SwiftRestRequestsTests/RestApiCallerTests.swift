@@ -32,7 +32,7 @@ struct HttpBinHeaders: Decodable {
     }
 }
 
-final class RestApiCallerTests: XCTestCase {
+final class RestApiCallerTests: AbstractRestApiCallerTests {
     
     var apiCaller: RestApiCaller!
     

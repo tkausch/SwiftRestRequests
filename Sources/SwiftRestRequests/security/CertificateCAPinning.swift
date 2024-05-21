@@ -26,18 +26,22 @@ import Foundation
 // no public key pinning implemented
 #else
 
+import Logging
+
 open class CertificateCAPinning: NSObject, URLSessionDelegate {
     
     let pinnedCACertificates: [SecCertificate]
     
     public init(pinnedCACertificates: [SecCertificate]) {
         self.pinnedCACertificates = pinnedCACertificates
+        Logger.securityLogger.info("Initialized CertificateCAPinning with \(pinnedCACertificates)")
         super.init()
     }
     
     public func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
         
         guard let serverTrust = challenge.protectionSpace.serverTrust else {
+            Logger.securityLogger.warning("Could not get serverTrust! Will cancel authentication.")
             return (.cancelAuthenticationChallenge, nil)
         }
         
@@ -50,8 +54,10 @@ open class CertificateCAPinning: NSObject, URLSessionDelegate {
         let status = SecTrustEvaluateWithError(serverTrust, &error)
         
         if error == nil && status {
-                return (.useCredential, URLCredential(trust: serverTrust))
+            Logger.securityLogger.info("ServerTrust evaluation was successful. Will proceed.")
+            return (.useCredential, URLCredential(trust: serverTrust))
         } else {
+            Logger.securityLogger.warning("ServerTrustevaluation evaluation failed. Will cancel the request.")
             return (.cancelAuthenticationChallenge, nil)
         }
         

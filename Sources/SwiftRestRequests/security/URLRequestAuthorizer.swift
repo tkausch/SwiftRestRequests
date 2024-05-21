@@ -21,9 +21,12 @@
 
 
 import Foundation
+import Logging
+
 #if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
+
 
 
 /// `URLRequestAuthenticator` will a authentication
@@ -72,6 +75,7 @@ public class BearerReqeustAuthorizer: URLRequestAuthorizer {
     }
     
     public func configureAuthorizationHeader(for urlRequest: inout URLRequest) {
+        Logger.securityLogger.debug("Set HTTP Authorization header with bearer: \(self.token)")
         urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
     }
 }

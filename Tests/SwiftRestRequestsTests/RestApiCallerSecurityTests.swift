@@ -23,7 +23,10 @@ import XCTest
 @testable import SwiftRestRequests
 
 
-final class RestApiCallerSecurityTests: XCTestCase {
+
+
+
+final class RestApiCallerSecurityTests: AbstractRestApiCallerTests {
     
     var url: URL!
     
@@ -34,6 +37,7 @@ final class RestApiCallerSecurityTests: XCTestCase {
     let Password = "Password"
     
     override func setUp()  {
+        super.setUp()
         guard let url = URL(string: "https://httpbin.org") else {
             XCTFail("Bad test server URL!")
             return
@@ -92,5 +96,6 @@ final class RestApiCallerSecurityTests: XCTestCase {
         XCTAssertEqual(response!.user, User)
     }
     
+ 
     
 }

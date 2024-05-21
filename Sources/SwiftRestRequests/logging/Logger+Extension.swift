@@ -20,22 +20,16 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 import Foundation
 
-#if os(Linux)
-// no network tracing is implemented
-#else
+import Logging
 
-import OSLog
+extension Logger {
 
-extension OSLog {
-
-    static let subsystem = Bundle.main.bundleIdentifier!
+    static let labelPrefix = "com.swisscom.swiftRestRequests."
     
-    static let interceptorLogger = Logger(subsystem: subsystem, category: "SwiftRestRequestsInterceptor")
-    static let securityLogger = Logger(subsystem: subsystem, category: "SwiftRestRequestsSecurity")
-    static let apiCallerLogger = Logger(subsystem: subsystem, category: "SwiftRestRequestsApiCaller")
-    static let httpSessionLogger = Logger(subsystem: subsystem, category: "SwiftRestRequestsHttp")
+    static var interceptorLogger = Logger(label: labelPrefix + "Interceptor")
+    static var securityLogger = Logger(label: labelPrefix + "Security")
+    static var apiCallerLogger = Logger(label: labelPrefix + "ApiCaller")
     
 }
 
 
-#endif

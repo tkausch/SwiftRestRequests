@@ -12,16 +12,19 @@ let package = Package(
             .macOS(.v12)
     ],
     products: [
-        // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
             name: "SwiftRestRequests",
             targets: ["SwiftRestRequests"]),
     ],
+    dependencies: [
+        .package(url: "https://github.com/apple/swift-log", from: "1.5.4"),
+        .package(url: "https://github.com/tkausch/swift-log-oslog.git", from: "0.2.1")
+    ],
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "SwiftRestRequests"),
+            name: "SwiftRestRequests",
+            dependencies: [.product(name: "Logging", package: "swift-log"),
+                           .product(name: "LoggingOSLog", package: "swift-log-oslog")]),
         .testTarget(
             name: "SwiftRestRequestsTests",
             dependencies: ["SwiftRestRequests"]),
