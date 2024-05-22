@@ -22,9 +22,9 @@ class AbstractRestApiCallerTests: XCTestCase {
             LoggingSystem.bootstrap(OSLogHandler.init)
         #endif
         
-        Logger.securityLogger.logLevel = .trace
-        Logger.interceptorLogger.logLevel = .trace
-        Logger.apiCallerLogger.logLevel = .trace
+        Logger.SwiftRestRequests.security.logLevel = .trace
+        Logger.SwiftRestRequests.interceptor.logLevel = .trace
+        Logger.SwiftRestRequests.apiCaller.logLevel = .trace
         
     }()
     

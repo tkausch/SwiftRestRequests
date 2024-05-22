@@ -33,6 +33,8 @@ open class PublicKeyServerPinning: NSObject, URLSessionDelegate {
     
     let pinnedPublicKeys: [SecKey]
     
+    let logger = Logger.SwiftRestRequests.security
+    
     public init(pinnedPublicKeys: [SecKey]) {
         self.pinnedPublicKeys = pinnedPublicKeys
         super.init()
@@ -41,7 +43,7 @@ open class PublicKeyServerPinning: NSObject, URLSessionDelegate {
     public func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
         
         guard let serverTrust = challenge.protectionSpace.serverTrust else {
-            Logger.securityLogger.error("Could not get serverTrust! Will cancel authentication.")
+            logger.error("Could not get serverTrust. Will cancel authentication!!")
             return(.cancelAuthenticationChallenge, nil)
         }
         
@@ -51,14 +53,14 @@ open class PublicKeyServerPinning: NSObject, URLSessionDelegate {
             if pinnedPublicKeys.contains(where: { publicKey in
                 publicKey == serverPublicKey
             }) {
-                Logger.securityLogger.info("Trust evaluation was successful. The public key is known (pinned).")
+                logger.info("Trust evaluation was successful. The public key is known (pinned).")
                 return (.useCredential, URLCredential(trust: serverTrust))
             } else {
-                Logger.securityLogger.error("Trust evaluation failed. The public key is unkown therfore cancel request.")
+                logger.error("Trust evaluation failed. The public key is unkown therefore cancel request!!!")
                 return (.cancelAuthenticationChallenge, nil)
             }
         } else {
-            Logger.securityLogger.error("Trust evaluation failed. No public key found on server. Cancel request.")
+            logger.error("Trust evaluation failed. No public key found on server. Cancel request!")
             return (.cancelAuthenticationChallenge, nil)
         }
     }

@@ -38,6 +38,8 @@ public protocol URLRequestAuthorizer {
 /// `AuthorizationDelegate` used to configure HTTP header for basic authorization.
 public class BasicRequestAuthorizer: URLRequestAuthorizer {
     
+    let logger = Logger.SwiftRestRequests.security
+    
     public let username: String
     public let password: String
 
@@ -58,13 +60,17 @@ public class BasicRequestAuthorizer: URLRequestAuthorizer {
     }
 
     public func configureAuthorizationHeader(for urlRequest: inout URLRequest) {
-        Logger.securityLogger.trace("Set HTTP Authorization header is set to: \(self.headerValue)")
+        logger.trace("Set HTTP Authorization header",  metadata: [
+            "urlRequest": "\(String(describing: urlRequest.url?.absoluteString))",
+            "Authorization": "\(headerValue)"])
         urlRequest.setValue(self.headerValue, forHTTPHeaderField: "Authorization")
     }
 }
 
 /// `AuthorizationDelegate` used to configure HTTP header for bearer authorization.
 public class BearerReqeustAuthorizer: URLRequestAuthorizer {
+    
+    let logger = Logger.SwiftRestRequests.security
     
     // The token value (without `Bearer` prefix) to be used for the HTTP `Authorization` request header.
     public var token: String
@@ -76,7 +82,8 @@ public class BearerReqeustAuthorizer: URLRequestAuthorizer {
     }
     
     public func configureAuthorizationHeader(for urlRequest: inout URLRequest) {
-        Logger.securityLogger.trace("Set HTTP Authorization header with bearer: \(self.token)")
+        logger.trace("Set HTTP Authorization header", metadata: [
+            "Authorization": "Bearer \(self.token)"])
         urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
     }
 }

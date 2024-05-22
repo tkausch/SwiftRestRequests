@@ -32,12 +32,14 @@ open class LogNetworkInterceptor: URLRequestInterceptor {
     
     static let noBody =  "none"
     
+    let logger = Logger.SwiftRestRequests.interceptor
+    
     public func invokeRequest(request: inout URLRequest, for session: URLSession) {
         
         guard let requestHeaders = request.allHTTPHeaderFields,
               let headerData = try? JSONSerialization.data(withJSONObject: requestHeaders , options: .prettyPrinted),
               let prettyJsonHeaders = String(data: headerData , encoding: .utf8) else {
-            Logger.interceptorLogger.warning("Something went wrong while converting headers to JSON data.")
+            logger.warning("Something went wrong while converting headers to JSON data.")
             return
         }
         
@@ -46,10 +48,10 @@ open class LogNetworkInterceptor: URLRequestInterceptor {
         let url = request.url?.absoluteString ?? "nil"
         let method = request.httpMethod ?? "nil"
         
-        Logger.interceptorLogger.info("Will invoke request: \(method) \(url)")
-        
-        Logger.interceptorLogger.trace("HTTP request headers: \(prettyJsonHeaders)")
-        Logger.interceptorLogger.trace("HTTP request body: \(prettyJsonBody)")
+        logger.info("Send HTTP \(method) request \(url)", metadata: [ "method": "\(method)",
+                                                "url": "\(url)",
+                                                "headers": "\(prettyJsonHeaders)",
+                                                "body": "\(prettyJsonBody)"])
     }
     
     public func receiveResponse(data:  Data, response: HTTPURLResponse, for session: URLSession) {
@@ -65,12 +67,13 @@ open class LogNetworkInterceptor: URLRequestInterceptor {
         
         let url = response.url?.absoluteString ?? "nil"
         let status = response.statusCode
-
         
-        Logger.interceptorLogger.info("Did receive response: \(url) ->  \(status)")
+        logger.info("Received HTTP response \(url) -> \(status)", metadata: [
+            "url": "\(url)",
+            "status": "\(status)",
+            "headers": "\(prettyJsonHeaders)",
+            "body": "\(prettyJsonBody)"])
         
-        Logger.interceptorLogger.trace("HTTP response headers: \(prettyJsonHeaders)")
-        Logger.interceptorLogger.trace("HTTP response body: \(prettyJsonBody)")
     }
 }
 
