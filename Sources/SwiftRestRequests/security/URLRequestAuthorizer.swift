@@ -58,6 +58,7 @@ public class BasicRequestAuthorizer: URLRequestAuthorizer {
     }
 
     public func configureAuthorizationHeader(for urlRequest: inout URLRequest) {
+        Logger.securityLogger.trace("Set HTTP Authorization header is set to: \(self.headerValue)")
         urlRequest.setValue(self.headerValue, forHTTPHeaderField: "Authorization")
     }
 }
@@ -75,7 +76,7 @@ public class BearerReqeustAuthorizer: URLRequestAuthorizer {
     }
     
     public func configureAuthorizationHeader(for urlRequest: inout URLRequest) {
-        Logger.securityLogger.debug("Set HTTP Authorization header with bearer: \(self.token)")
+        Logger.securityLogger.trace("Set HTTP Authorization header with bearer: \(self.token)")
         urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
     }
 }

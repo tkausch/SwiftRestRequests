@@ -41,7 +41,7 @@ open class CertificateCAPinning: NSObject, URLSessionDelegate {
     public func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
         
         guard let serverTrust = challenge.protectionSpace.serverTrust else {
-            Logger.securityLogger.warning("Could not get serverTrust! Will cancel authentication.")
+            Logger.securityLogger.error("Could not get serverTrust! Will cancel authentication.")
             return (.cancelAuthenticationChallenge, nil)
         }
         
@@ -57,7 +57,7 @@ open class CertificateCAPinning: NSObject, URLSessionDelegate {
             Logger.securityLogger.info("ServerTrust evaluation was successful. Will proceed.")
             return (.useCredential, URLCredential(trust: serverTrust))
         } else {
-            Logger.securityLogger.warning("ServerTrustevaluation evaluation failed. Will cancel the request.")
+            Logger.securityLogger.error("ServerTrustevaluation evaluation failed. Will cancel the request.")
             return (.cancelAuthenticationChallenge, nil)
         }
         

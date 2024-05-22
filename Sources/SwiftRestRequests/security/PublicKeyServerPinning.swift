@@ -41,7 +41,7 @@ open class PublicKeyServerPinning: NSObject, URLSessionDelegate {
     public func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
         
         guard let serverTrust = challenge.protectionSpace.serverTrust else {
-            Logger.securityLogger.warning("Could not get serverTrust! Will cancel authentication.")
+            Logger.securityLogger.error("Could not get serverTrust! Will cancel authentication.")
             return(.cancelAuthenticationChallenge, nil)
         }
         
@@ -51,7 +51,7 @@ open class PublicKeyServerPinning: NSObject, URLSessionDelegate {
             if pinnedPublicKeys.contains(where: { publicKey in
                 publicKey == serverPublicKey
             }) {
-                Logger.securityLogger.info("Trust evaluation was successful. The public key is known.")
+                Logger.securityLogger.info("Trust evaluation was successful. The public key is known (pinned).")
                 return (.useCredential, URLCredential(trust: serverTrust))
             } else {
                 Logger.securityLogger.error("Trust evaluation failed. The public key is unkown therfore cancel request.")
