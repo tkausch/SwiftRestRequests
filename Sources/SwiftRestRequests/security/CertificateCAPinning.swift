@@ -32,16 +32,20 @@ open class CertificateCAPinning: NSObject, URLSessionDelegate {
     
     let pinnedCACertificates: [SecCertificate]
     
+    let logger = Logger.SwiftRestRequests.security
+    
     public init(pinnedCACertificates: [SecCertificate]) {
         self.pinnedCACertificates = pinnedCACertificates
-        Logger.securityLogger.info("Initialized CertificateCAPinning with \(pinnedCACertificates)")
+        logger.info("Initialized CertificateCAPinning", metadata: [
+            "pinnedCACertificates": "\(pinnedCACertificates)"
+        ])
         super.init()
     }
     
     public func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
         
         guard let serverTrust = challenge.protectionSpace.serverTrust else {
-            Logger.securityLogger.error("Could not get serverTrust! Will cancel authentication.")
+            logger.error("Could not get serverTrust. Will cancel authentication!!!")
             return (.cancelAuthenticationChallenge, nil)
         }
         
@@ -54,10 +58,10 @@ open class CertificateCAPinning: NSObject, URLSessionDelegate {
         let status = SecTrustEvaluateWithError(serverTrust, &error)
         
         if error == nil && status {
-            Logger.securityLogger.info("ServerTrust evaluation was successful. Will proceed.")
+            logger.info("ServerTrust evaluation was successful. Will proceed.")
             return (.useCredential, URLCredential(trust: serverTrust))
         } else {
-            Logger.securityLogger.error("ServerTrustevaluation evaluation failed. Will cancel the request.")
+            logger.error("ServerTrustevaluation evaluation failed. Will cancel the request!!!")
             return (.cancelAuthenticationChallenge, nil)
         }
         
