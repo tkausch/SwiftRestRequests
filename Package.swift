@@ -18,7 +18,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-log", from: "1.5.4"),
-        .package(url: "https://github.com/tkausch/swift-log-oslog.git", from: "0.2.1")
+        .package(url: "https://github.com/tkausch/swift-log-oslog.git", from: "0.2.2")
     ],
     targets: [
         .target(
