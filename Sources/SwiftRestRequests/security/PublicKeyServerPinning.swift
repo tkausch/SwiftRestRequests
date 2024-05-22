@@ -25,6 +25,8 @@ import Foundation
 // no public key pinning implemented
 #else
 
+import Logging
+
 /// Use this URLSession delegate to implement public key server  pinning.
 /// Note: You  need to assign this object as  delegate for the `URLSession` object.
 open class PublicKeyServerPinning: NSObject, URLSessionDelegate {
@@ -39,6 +41,7 @@ open class PublicKeyServerPinning: NSObject, URLSessionDelegate {
     public func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
         
         guard let serverTrust = challenge.protectionSpace.serverTrust else {
+            Logger.securityLogger.error("Could not get serverTrust! Will cancel authentication.")
             return(.cancelAuthenticationChallenge, nil)
         }
         
@@ -48,11 +51,14 @@ open class PublicKeyServerPinning: NSObject, URLSessionDelegate {
             if pinnedPublicKeys.contains(where: { publicKey in
                 publicKey == serverPublicKey
             }) {
+                Logger.securityLogger.info("Trust evaluation was successful. The public key is known (pinned).")
                 return (.useCredential, URLCredential(trust: serverTrust))
             } else {
+                Logger.securityLogger.error("Trust evaluation failed. The public key is unkown therfore cancel request.")
                 return (.cancelAuthenticationChallenge, nil)
             }
         } else {
+            Logger.securityLogger.error("Trust evaluation failed. No public key found on server. Cancel request.")
             return (.cancelAuthenticationChallenge, nil)
         }
     }

@@ -238,6 +238,7 @@ open class RestApiCaller : NSObject {
     ///   - options: Rest options to use for the data task i.e. timeout
     /// - Returns: The data returned by server and the corresponding `HTTPURLResponse`
     private func makeCall<T: Deserializer>(_ relativePath: String?, httpMethod: HTTPMethod, payload: Data?, responseDeserializer: T, options: RestOptions) async throws -> (T.ResponseType?, HTTPStatusCode) {
+        
         let (data, httpResponse) = try await dataTask(relativePath: relativePath, httpMethod: httpMethod.rawValue, accept: responseDeserializer.acceptHeader, payload: payload, options: options)
        
         let httpStatus = httpResponse.status

@@ -21,11 +21,12 @@
 
 import Foundation
 
-#if os(Linux)
-// no network tracing is implemented
-#else
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
-import OSLog
+
+import Logging
 
 open class LogNetworkInterceptor: URLRequestInterceptor {
     
@@ -36,17 +37,19 @@ open class LogNetworkInterceptor: URLRequestInterceptor {
         guard let requestHeaders = request.allHTTPHeaderFields,
               let headerData = try? JSONSerialization.data(withJSONObject: requestHeaders , options: .prettyPrinted),
               let prettyJsonHeaders = String(data: headerData , encoding: .utf8) else {
-            OSLog.interceptorLogger.warning("Something went wrong while converting headers to JSON data.")
+            Logger.interceptorLogger.warning("Something went wrong while converting headers to JSON data.")
             return
         }
         
-        let prettyJsonBody = request.httpBody?.prettyPrintedJSONString
+        let prettyJsonBody = request.httpBody?.prettyPrintedJSONString ?? "nil"
         
         let url = request.url?.absoluteString ?? "nil"
         let method = request.httpMethod ?? "nil"
         
-        OSLog.interceptorLogger.info("invokeRequest: \(method) \(url)")
-        OSLog.interceptorLogger.debug("invokeRequest: \(method) \(url) \nHTTP-HEADERS: \(prettyJsonHeaders) \nHTTP-BODY: \(prettyJsonBody ?? LogNetworkInterceptor.noBody)")
+        Logger.interceptorLogger.info("Will invoke request: \(method) \(url)")
+        
+        Logger.interceptorLogger.trace("HTTP request headers: \(prettyJsonHeaders)")
+        Logger.interceptorLogger.trace("HTTP request body: \(prettyJsonBody)")
     }
     
     public func receiveResponse(data:  Data, response: HTTPURLResponse, for session: URLSession) {
@@ -58,14 +61,16 @@ open class LogNetworkInterceptor: URLRequestInterceptor {
         }
         
         
-        let prettyJsonBody = data.prettyPrintedJSONString
+        let prettyJsonBody = data.prettyPrintedJSONString ?? "nil"
         
         let url = response.url?.absoluteString ?? "nil"
         let status = response.statusCode
 
         
-        OSLog.interceptorLogger.info("receiveResponse: \(url) ->  \(status)")
-        OSLog.interceptorLogger.debug("receiveResponse: \(url) ->  \(status) \nHTTP-HEADERS: \(prettyJsonHeaders) \nHTTP-BODY: \(prettyJsonBody ?? LogNetworkInterceptor.noBody)")
+        Logger.interceptorLogger.info("Did receive response: \(url) ->  \(status)")
+        
+        Logger.interceptorLogger.trace("HTTP response headers: \(prettyJsonHeaders)")
+        Logger.interceptorLogger.trace("HTTP response body: \(prettyJsonBody)")
     }
 }
 
@@ -85,5 +90,5 @@ extension Data {
     }
 }
 
-#endif
+
 
