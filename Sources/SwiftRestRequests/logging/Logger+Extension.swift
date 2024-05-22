@@ -1,5 +1,5 @@
 //
-// OSLog+Extension.swift
+// Logger+Extension.swift
 //
 // This File belongs to SwiftRestRequests
 // Copyright © 2024 Thomas Kausch.
@@ -26,9 +26,9 @@ extension Logger {
 
     static let labelPrefix = "com.swisscom.swiftRestRequests."
     
-    static var interceptorLogger = Logger(label: labelPrefix + "Interceptor")
-    static var securityLogger = Logger(label: labelPrefix + "Security")
-    static var apiCallerLogger = Logger(label: labelPrefix + "ApiCaller")
+    public static var interceptorLogger = Logger(label: labelPrefix + "Interceptor")
+    public static var securityLogger = Logger(label: labelPrefix + "Security")
+    public static var apiCallerLogger = Logger(label: labelPrefix + "ApiCaller")
     
 }
 

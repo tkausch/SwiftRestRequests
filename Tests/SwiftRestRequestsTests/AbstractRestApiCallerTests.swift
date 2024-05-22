@@ -8,7 +8,6 @@ import XCTest
 
 
 import Logging
-import LoggingOSLog
 
 
 class AbstractRestApiCallerTests: XCTestCase {
@@ -20,7 +19,7 @@ class AbstractRestApiCallerTests: XCTestCase {
            // Configure `swift-log`default logger
         #else
             /// Configure `swift-log` logging system to use OSLog backend
-            LoggingSystem.bootstrap(LoggingOSLog.init)
+            LoggingSystem.bootstrap(OSLogHandler.init)
         #endif
         
         Logger.securityLogger.logLevel = .trace
