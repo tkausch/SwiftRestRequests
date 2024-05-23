@@ -15,14 +15,13 @@ This package employs an HTTP client transport mechanism utilizing the URLSession
 - [x] Easy API that uses Swift's async/await syntax
 - [x] Natively integrates with Swift's `Decodable` and `Encodable` types
 - [x] HTTP response validation
-- [x] URL Parameter Encoding
+- [x] Provides registration of HTTP Request Interceptors  
 - [x] Send custom HTTP headers
 - [x] Change request timeout options
 - [x] Basic and Bearer Authorization
-- [x] Fully native Swift API
-- [x] Check against expected HTTP status codes
 - [x] TLS Certificate and Public Key Pinning
-- [x] Comes with logging support using `swift-log`
+- [x] Logging support using `swift-log`
+- [x] `OSLogHandler` for unified logging  on Apple ecosystem
 
 
 ### Requirements
