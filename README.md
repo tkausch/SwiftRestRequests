@@ -15,7 +15,7 @@ This package employs an HTTP client transport mechanism utilizing the URLSession
 - [x] Easy API that uses Swift's async/await syntax
 - [x] Natively integrates with Swift's `Decodable` and `Encodable` types
 - [x] HTTP response validation
-- [x] Provides registration of HTTP Request Interceptors  
+- [x] Implement your own HTTP Request Interceptors  
 - [x] Send custom HTTP headers
 - [x] Change request timeout options
 - [x] Basic and Bearer Authorization
