@@ -22,22 +22,23 @@ This package employs an HTTP client transport mechanism utilizing the URLSession
 - [x] Fully native Swift API
 - [x] Check against expected HTTP status codes
 - [x] TLS Certificate and Public Key Pinning
-- [x] Support Swift LogLevels for Libraries
+- [x] Comes with logging support using `swift-log`
 
 
 ### Requirements
 
-SwiftRestRequests 1.1 and newer works with any of the supported operating systems listed below with the version of Xcode.
+SwiftRestRequests 1.5.6 and newer works with any of the supported operating systems listed below with the version of Xcode.
 
 - iOS 15.0+
 - tvOS 15.0+
 - watchOS 8.0+
 - iPadOS 15.0+
 - macOS 12.0+
+- Linux
 
 ### Swift Package Manager
 
-SwiftRestRequests is compatible with the SPM for macOS, iOS, iPadOS, tvOS, and watchOS (not avaiale on Linux at this time). When using XCode 11, the Swift Package Manager is the recommended installation method.
+SwiftRestRequests is compatible with the SPM for macOS, iOS, iPadOS, tvOS, and watchOS. When using XCode 11, the Swift Package Manager is the recommended installation method.
 
 To use in XCode 11+, open your project and go to `File->Swift Packages->Add Package Dependency...` and follow along the dialogs. Thats it!
 
@@ -45,7 +46,7 @@ If you prefer to add it manually using SPM, just add the SwiftRestRequests depen
 
 ```
 dependencies: [
-.package(url: "https://github.com/tkausch/SwiftRestRequests", from: "0.9")
+.package(url: "https://github.com/tkausch/SwiftRestRequests", from: "2.5.6")
 ]
 ```
 ### Certificate pinning
@@ -59,7 +60,9 @@ If you are not familiar with this native capability I recommend reading Apple’
 - Pinned keys are always associated with a domain name, and the app will refuse to connect to that domain unless the pinning requirement is met.
 - You can associate multiple public keys with a domain name.
 
-This built-in pinning works well for `URLSession` and therfore as well for SwiftRestRequests.  However if you prefere API calls for server pinning you find `CertificateCAPinning` and `PublicKeyServerPinning` delegates that can be used together with `HttpSession`.
+This built-in pinning works well for `URLSession` and therfore as well for SwiftRestRequests.  
+
+However if you prefere API calls for server pinning you find `CertificateCAPinning` and `PublicKeyServerPinning` delegates that can be used together with `HttpSession`.
 
 
 ## Write a REST Client API
