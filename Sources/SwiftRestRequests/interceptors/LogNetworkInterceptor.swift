@@ -33,6 +33,12 @@ open class LogNetworkInterceptor: URLRequestInterceptor {
     static let noBody =  "none"
     
     let logger = Logger.SwiftRestRequests.interceptor
+    let enableNetworkTracing: Bool
+    
+    
+    public init(enableNetworkTracing: Bool) {
+        self.enableNetworkTracing = enableNetworkTracing
+    }
     
     public func invokeRequest(request: inout URLRequest, for session: URLSession) {
         
@@ -48,10 +54,14 @@ open class LogNetworkInterceptor: URLRequestInterceptor {
         let url = request.url?.absoluteString ?? "nil"
         let method = request.httpMethod ?? "nil"
         
-        logger.info("Send HTTP \(method) request \(url)", metadata: [ "method": "\(method)",
-                                                "url": "\(url)",
-                                                "headers": "\(prettyJsonHeaders)",
-                                                "body": "\(prettyJsonBody)"])
+        
+        if enableNetworkTracing {
+            logger.info("Request: \(method) \(url)\nheaders: \(prettyJsonHeaders) \nbody: \(prettyJsonBody)")
+        } else {
+            logger.info("Request: \(method) \(url)")
+        }
+        
+       
     }
     
     public func receiveResponse(data:  Data, response: HTTPURLResponse, for session: URLSession) {
@@ -68,11 +78,12 @@ open class LogNetworkInterceptor: URLRequestInterceptor {
         let url = response.url?.absoluteString ?? "nil"
         let status = response.statusCode
         
-        logger.info("Received HTTP response \(url) -> \(status)", metadata: [
-            "url": "\(url)",
-            "status": "\(status)",
-            "headers": "\(prettyJsonHeaders)",
-            "body": "\(prettyJsonBody)"])
+        
+        if enableNetworkTracing {
+            logger.info("Response: \(url) -> \(status)\nheaders: \(prettyJsonHeaders) \nbody: \(prettyJsonBody)")
+        } else {
+            logger.info("Response: \(url) -> \(status)")
+        }
         
     }
 }

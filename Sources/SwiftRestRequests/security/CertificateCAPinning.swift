@@ -58,10 +58,10 @@ open class CertificateCAPinning: NSObject, URLSessionDelegate {
         let status = SecTrustEvaluateWithError(serverTrust, &error)
         
         if error == nil && status {
-            logger.info("ServerTrust evaluation was successful. Will proceed.")
+            logger.info("ServerTrust evaluation was successful - will proceed request...")
             return (.useCredential, URLCredential(trust: serverTrust))
         } else {
-            logger.error("ServerTrustevaluation evaluation failed. Will cancel the request!!!")
+            logger.error("ServerTrustevaluation evaluation failed - will cancel the HTTP request!!!")
             return (.cancelAuthenticationChallenge, nil)
         }
         

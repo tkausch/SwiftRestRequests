@@ -110,17 +110,10 @@ open class RestApiCaller : NSObject {
                 print("WARNING: Networktracing is NOT supported on Linux!")
             }
         #else
-            if enableNetworkTrace {
-                registerRequestInterceptor(LogNetworkInterceptor())
-            }
+            registerRequestInterceptor(LogNetworkInterceptor(enableNetworkTracing: enableNetworkTrace))
         #endif
      
-        logger.info("Created RestApiCaller", metadata: [
-            "baseUrl": "\(baseUrl)",
-            "errorDeserializer": "\(String(describing: errorDeserializer))",
-            "headerGenerator": "\(String(describing: headerGenerator))",
-            "authorizer": "\(String(describing: authorizer))"
-          ])
+        logger.info("Created RestApiCaller (baseUrl=\(baseUrl); enabledNetworkTrace=\(enableNetworkTrace))")
     }
     
 // MARK: Generic request dispatching methods
@@ -204,12 +197,7 @@ open class RestApiCaller : NSObject {
     /// - Returns: The data returned by server and the corresponding `HTTPURLResponse`
     private func dataTask(relativePath: String?, httpMethod: String, accept: String, payload: Data?, options: RestOptions) async throws -> (Data, HTTPURLResponse) {
         
-        logger.debug("Data Task started", metadata: [
-            "relativePath": "\(String(describing: relativePath))",
-            "httpMethod": "\(String(describing: httpMethod))",
-            "accept": "\(String(describing: accept))",
-            "requestTimeout": "\(String(describing: options.requestTimeoutSeconds))"
-          ])
+        logger.debug("Data Task \(httpMethod) \(String(describing: relativePath)) started with timeout \(options.requestTimeoutSeconds) seconds.")
         
         var restURL: URL;
         if let relativeURL = relativePath {
@@ -326,9 +314,7 @@ open class RestApiCaller : NSObject {
     /// Add request interceptor to the api caller.
     /// - Parameter interceptor: The interceptor to be called
     public func registerRequestInterceptor(_ interceptor: URLRequestInterceptor) {
-        logger.info("Registering request interceptor", metadata: [
-            "interceptor": "\(interceptor)"
-        ])
+        logger.info("Registering request interceptor: \(interceptor)")
         if  self.interceptors == nil {
             self.interceptors = [URLRequestInterceptor]()
         }
