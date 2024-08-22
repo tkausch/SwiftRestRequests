@@ -107,8 +107,8 @@ extension RestApiCallerTests {
     
     func testGetErrorStatus() async throws {
         do {
-            let status = try await apiCaller.get(at: "status/404")
-        } catch RestError.failedRestCall(let response, let statusCode, _ ){
+            let _ = try await apiCaller.get(at: "status/404")
+        } catch RestError.failedRestCall( _ , let statusCode, _ ){
             XCTAssertEqual(statusCode, .notFound)
         }
     }
@@ -212,7 +212,7 @@ extension RestApiCallerTests {
             do {
                 let returnedStatus =  try await apiCaller.get(at: "status/\(statusCode.rawValue)", options: options)
                 XCTAssertEqual(statusCode, returnedStatus)
-            } catch RestError.failedRestCall(let response, let errorStatus, _ ) {
+            } catch RestError.failedRestCall(_, let errorStatus, _ ) {
                 XCTAssertEqual(statusCode, errorStatus)
             }
         }

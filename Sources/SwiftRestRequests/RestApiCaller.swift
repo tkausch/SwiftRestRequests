@@ -274,7 +274,11 @@ open class RestApiCaller : NSObject {
         // Postcondition: We have a response object or  error that needs to be parsed!
         
         let contentType =  httpResponse.value(forHTTPHeaderField: HTTPHeaderKeys.ContentType.rawValue)
-        guard  let contentType, let _ = MimeType(rawValue: contentType) else {
+        
+        // Note: some servers return also encoding i.e. Content-Type: application/json; charset=utf-8 take the first part
+        let firstContentMimeType = contentType?.components(separatedBy: ";").first
+        
+        guard  let firstContentMimeType, let _ = MimeType(rawValue: firstContentMimeType) else {
             throw RestError.invalidMimeType(contentType)
         }
         
