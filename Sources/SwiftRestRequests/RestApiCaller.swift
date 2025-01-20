@@ -60,6 +60,7 @@ open class RestApiCaller : NSObject {
     let session: URLSession
     let baseUrl: URL
     let errorDeserializer: (any Deserializer)?
+    let httpCookieStorage: HTTPCookieStorage?
     
     /// Contains an optional  array of request interceptors.
     var interceptors:  [URLRequestInterceptor]?
@@ -82,8 +83,16 @@ open class RestApiCaller : NSObject {
                             authorizer: URLRequestAuthorizer? = nil,
                             errorDeserializer: (any Deserializer)? = nil,
                             headerGenerator: HeaderGenerator? = nil,
-                            enableNetworkTrace: Bool = false) {
-        self.init(baseUrl: baseUrl, urlSession: URLSession(configuration: sessionConfig), authorizer: authorizer, errorDeserializer: errorDeserializer, headerGenerator: nil, enableNetworkTrace: enableNetworkTrace)
+                            enableNetworkTrace: Bool = false,
+                            httpCookieStorage: HTTPCookieStorage? = nil) {
+        
+        if let httpCookieStorage {
+            sessionConfig.httpCookieAcceptPolicy = .always
+            sessionConfig.httpShouldSetCookies = true
+            sessionConfig.httpCookieStorage = httpCookieStorage
+        }
+        
+        self.init(baseUrl: baseUrl, urlSession: URLSession(configuration: sessionConfig), authorizer: authorizer, errorDeserializer: errorDeserializer, headerGenerator: nil, enableNetworkTrace: enableNetworkTrace, httpCookieStorage: httpCookieStorage)
     }
 
     
@@ -92,12 +101,13 @@ open class RestApiCaller : NSObject {
     ///   - baseUrl: The base URL to which requests are sent.
     ///   - urlSession: The session coniguration to be used. Note: You can fully configure this session i.e. using delegates.
     ///   - errorDeserializer: An optional error deserializer that can be used to deserialize generic error JSON.
-    public init(baseUrl: URL, urlSession: URLSession, authorizer: URLRequestAuthorizer?, errorDeserializer: (any Deserializer)?, headerGenerator: HeaderGenerator?, enableNetworkTrace: Bool) {
+    public init(baseUrl: URL, urlSession: URLSession, authorizer: URLRequestAuthorizer?, errorDeserializer: (any Deserializer)?, headerGenerator: HeaderGenerator?, enableNetworkTrace: Bool, httpCookieStorage: HTTPCookieStorage?) {
         self.baseUrl = baseUrl
         self.errorDeserializer = errorDeserializer
         self.session = urlSession
         self.headerGenerator = headerGenerator
         self.authorizer = authorizer
+        self.httpCookieStorage = httpCookieStorage
         
         super.init()
         
@@ -446,3 +456,21 @@ open class RestApiCaller : NSObject {
     
 }
 
+
+
+// MARK: Adding cookie handling capabilities to RestApiCaller
+
+extension RestApiCaller {
+    
+    public func httpCookies() -> [HTTPCookie] {
+        return httpCookieStorage?.cookies ?? []
+    }
+    
+    public func deleteAllCookies() {
+        self.httpCookieStorage?.removeCookies(since: Date())
+    }
+    
+    public func httpCookies(for url: URL) -> [HTTPCookie]? {
+        self.httpCookieStorage?.cookies(for: url)
+    }
+}

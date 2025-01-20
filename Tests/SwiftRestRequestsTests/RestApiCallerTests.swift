@@ -35,13 +35,18 @@ struct HttpBinHeaders: Decodable {
 final class RestApiCallerTests: AbstractRestApiCallerTests {
     
     var apiCaller: RestApiCaller!
+    var baseUrl: URL!
     
     override func setUp()  {
-        guard let url = URL(string: "https://httpbin.org") else {
+        
+        self.baseUrl = URL(string: "https://httpbin.org")
+        
+        guard let baseUrl else {
             XCTFail("Bad test server URL!")
             return
         }
-        apiCaller = RestApiCaller(baseUrl: url, enableNetworkTrace: true)
+        
+        apiCaller = RestApiCaller(baseUrl: baseUrl, enableNetworkTrace: true, httpCookieStorage: HTTPCookieStorage.shared)
     }
     
     func testAcceptHeaderIsSentInRequest() async throws {
@@ -234,6 +239,62 @@ extension RestApiCallerTests {
     }
     
 }
+
+// MARK: - Testing Cookies handling is done appropriate
+
+extension RestApiCallerTests {
+    
+    /// Returns a list of cookies that are set by server
+    /// - Returns: A list of key value pairs.
+    func getCookiesReceivedByServer() async throws -> [String:String] {
+        let (response, httpStatus) = try await apiCaller.get(HttpBinCookiesResponse.self, at: "cookies")
+        
+        guard let cookies = response?.cookies, httpStatus == .ok else {
+            XCTFail("Cookies list  missing")
+            return [:]
+        }
+        
+        return cookies
+    }
+        
+    struct HttpBinCookiesResponse: Codable {
+        let cookies: [String: String]
+    }
+    
+    func testCookieListIsEmpty() async throws {
+        // server session does initially not contain any cookies
+        let cookies = try await getCookiesReceivedByServer()
+        XCTAssertTrue(cookies.isEmpty)
+    }
+
+    func testCookiesAreReceivedAndSent() async throws {
+        
+        let cookieName = "SwiftRestRequestTestCookie"
+        let cookieValue = UUID().uuidString
+        
+        let (response, httpStatus) = try await apiCaller.get(HttpBinCookiesResponse.self, at: "cookies/set/\(cookieName)/\(cookieValue)")
+        
+        guard let cookies = response?.cookies, httpStatus == .ok else {
+            XCTFail( "Service not working! Cookies list  missing!")
+            return
+        }
+    
+        // Check server did receive cookie and send it back to client...
+        XCTAssertEqual(cookies[cookieName], cookieValue)
+        
+        // Out ApiCaller cookiestore must now contain the cookie
+        let cookie = apiCaller.httpCookies(for: baseUrl)?.filter{ $0.name == cookieName }.first
+        
+        XCTAssertEqual(cookie?.value, cookieValue)
+        
+        // Check cookie is sent to server again using cookie store
+        let receivedCookiesByServer = try await getCookiesReceivedByServer()
+        
+        XCTAssertEqual(receivedCookiesByServer[cookieName], cookieValue)
+        
+    }
+}
+
 
 
 // MARK: - URL Parameter encoding tests
