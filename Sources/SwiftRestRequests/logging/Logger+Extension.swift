@@ -22,7 +22,7 @@ import Foundation
 
 import Logging
 
-extension Logger: Sendable {
+extension Logger {
 
     static let labelPrefix = "com.swisscom.swiftRestRequests."
     
