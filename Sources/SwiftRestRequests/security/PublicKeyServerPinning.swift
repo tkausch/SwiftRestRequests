@@ -19,7 +19,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import Foundation
+@preconcurrency import Foundation
 
 #if os(Linux)
 // no public key pinning implemented
@@ -29,7 +29,7 @@ import Logging
 
 /// Use this URLSession delegate to implement public key server  pinning.
 /// Note: You  need to assign this object as  delegate for the `URLSession` object.
-open class PublicKeyServerPinning: NSObject, URLSessionDelegate {
+final class PublicKeyServerPinning: NSObject,  URLSessionDelegate {
     
     let pinnedPublicKeys: [SecKey]
     
@@ -37,7 +37,6 @@ open class PublicKeyServerPinning: NSObject, URLSessionDelegate {
     
     public init(pinnedPublicKeys: [SecKey]) {
         self.pinnedPublicKeys = pinnedPublicKeys
-        super.init()
     }
     
     public func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {

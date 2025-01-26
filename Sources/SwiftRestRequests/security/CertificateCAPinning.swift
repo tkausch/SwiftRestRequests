@@ -20,7 +20,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-import Foundation
+@preconcurrency import Foundation
 
 #if os(Linux)
 // no public key pinning implemented
@@ -28,7 +28,7 @@ import Foundation
 
 import Logging
 
-open class CertificateCAPinning: NSObject, URLSessionDelegate {
+final class CertificateCAPinning: NSObject, URLSessionDelegate {
     
     let pinnedCACertificates: [SecCertificate]
     
@@ -39,7 +39,6 @@ open class CertificateCAPinning: NSObject, URLSessionDelegate {
         logger.info("Initialized CertificateCAPinning", metadata: [
             "pinnedCACertificates": "\(pinnedCACertificates)"
         ])
-        super.init()
     }
     
     public func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {

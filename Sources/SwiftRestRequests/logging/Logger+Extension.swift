@@ -22,16 +22,15 @@ import Foundation
 
 import Logging
 
-extension Logger {
+extension Logger: Sendable {
 
     static let labelPrefix = "com.swisscom.swiftRestRequests."
     
     public struct SwiftRestRequests {
-        public static var interceptor = Logger(label: labelPrefix + "Interceptor")
-        public static var security = Logger(label: labelPrefix + "Security")
-        public static var apiCaller = Logger(label: labelPrefix + "ApiCaller")
+        public static let interceptor = Logger(label: labelPrefix + "Interceptor")
+        public static let security = Logger(label: labelPrefix + "Security")
+        public static let apiCaller = Logger(label: labelPrefix + "ApiCaller")
     }
-    
 }
 
 

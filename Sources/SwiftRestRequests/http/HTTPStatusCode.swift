@@ -28,7 +28,7 @@ import FoundationNetworking
 /// This is a list of Hypertext Transfer Protocol (HTTP) response status codes.
 /// It includes codes from IETF internet standards, other IETF RFCs, other specifications, and some additional commonly used codes.
 /// The first digit of the status code specifies one of five classes of response; an HTTP client must recognise these five classes at a minimum.
-public enum HTTPStatusCode: Int, Encodable, Decodable  {
+public enum HTTPStatusCode: Int, Encodable, Decodable, Sendable  {
     
     /// The response class representation of status codes, these get grouped by their first digit.
     public enum StatusType {

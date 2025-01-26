@@ -24,7 +24,7 @@ import Foundation
 /// Protocol for de-serializing responses from the web server.
 public protocol Deserializer {
 
-    associatedtype ResponseType = Any
+    associatedtype ResponseType: Sendable
 
     /// The `Accept` Hader to send in the request, ex: `application/json`
     var acceptHeader: String { get }
@@ -39,7 +39,7 @@ public protocol Deserializer {
 
 
 /// A `Deserializer` for Swift 4's `Decodable` protocol
-public final class DecodableDeserializer<T: Decodable>: Deserializer {
+public final class DecodableDeserializer<T: Decodable & Sendable>: Deserializer {
 
     public typealias ResponseType = T
 

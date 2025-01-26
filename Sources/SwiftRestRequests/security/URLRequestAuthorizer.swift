@@ -75,7 +75,7 @@ public class BearerReqeustAuthorizer: URLRequestAuthorizer {
     // The token value (without `Bearer` prefix) to be used for the HTTP `Authorization` request header.
     public var token: String
     
-    /// Createt bearer authorization with given `token`
+    /// Createt bearer authorization with given `token
     /// - Parameter token: Already base 64 encodced token used for bearer
     public init(token: String) {
         self.token = token
