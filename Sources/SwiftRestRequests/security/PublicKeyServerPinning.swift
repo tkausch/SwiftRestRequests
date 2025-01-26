@@ -29,7 +29,7 @@ import Logging
 
 /// Use this URLSession delegate to implement public key server  pinning.
 /// Note: You  need to assign this object as  delegate for the `URLSession` object.
-final class PublicKeyServerPinning: NSObject,  URLSessionDelegate {
+public final class PublicKeyServerPinning: NSObject,  URLSessionDelegate {
     
     let pinnedPublicKeys: [SecKey]
     

@@ -28,7 +28,7 @@
 
 import Logging
 
-final class CertificateCAPinning: NSObject, URLSessionDelegate {
+public final class CertificateCAPinning: NSObject, URLSessionDelegate {
     
     let pinnedCACertificates: [SecCertificate]
     
