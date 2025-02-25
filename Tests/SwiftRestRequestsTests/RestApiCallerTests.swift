@@ -37,6 +37,13 @@ final class RestApiCallerTests: AbstractRestApiCallerTests {
     var apiCaller: RestApiCaller!
     var baseUrl: URL!
     
+    let testCookieName = "SwiftRestRequestTestCookie"
+    let testCookieValue = UUID().uuidString
+    
+    private func readTestCookieFromStore() -> HTTPCookie? {
+        return apiCaller.httpCookies(for: baseUrl)?.filter{ $0.name == testCookieName }.first
+    }
+    
     override func setUp()  {
         
         self.baseUrl = URL(string: "https://httpbin.org")
@@ -48,6 +55,7 @@ final class RestApiCallerTests: AbstractRestApiCallerTests {
         
         apiCaller = RestApiCaller(baseUrl: baseUrl, enableNetworkTrace: true, httpCookieStorage: HTTPCookieStorage.shared)
     }
+    
     
     func testAcceptHeaderIsSentInRequest() async throws {
         
@@ -246,53 +254,59 @@ extension RestApiCallerTests {
     
     /// Returns a list of cookies that are set by server
     /// - Returns: A list of key value pairs.
-    func getCookiesReceivedByServer() async throws -> [String:String] {
+    func getCookiesInServerSession() async throws -> [String:String] {
         let (response, httpStatus) = try await apiCaller.get(HttpBinCookiesResponse.self, at: "cookies")
-        
         guard let cookies = response?.cookies, httpStatus == .ok else {
             XCTFail("Cookies list  missing")
             return [:]
         }
-        
         return cookies
     }
-        
+    
+    func getTestCookieFromStore() -> HTTPCookie? {
+        return apiCaller.httpCookies(for: baseUrl)?.filter{ $0.name == testCookieName }.first
+    }
+    
+    
     struct HttpBinCookiesResponse: Codable {
         let cookies: [String: String]
     }
     
     func testCookieListIsEmpty() async throws {
         // server session does initially not contain any cookies
-        let cookies = try await getCookiesReceivedByServer()
+        let cookies = try await getCookiesInServerSession()
         XCTAssertTrue(cookies.isEmpty)
     }
-
-    func testCookiesAreReceivedAndSent() async throws {
+    
+    
+    
+    func testCookiesAreSetAndSent() async throws {
         
-        let cookieName = "SwiftRestRequestTestCookie"
-        let cookieValue = UUID().uuidString
+        // Preperation: Cleanup existing test cookies in store
+        if let c = getTestCookieFromStore() {
+            apiCaller.httpCookieStorage?.deleteCookie(c)
+        }
         
-        let (response, httpStatus) = try await apiCaller.get(HttpBinCookiesResponse.self, at: "cookies/set/\(cookieName)/\(cookieValue)")
-        
+        // When: We register testCookie and make the Server returns a cookie
+        let (response, httpStatus) = try await apiCaller.get(HttpBinCookiesResponse.self, at: "cookies/set/\(testCookieName)/\(testCookieValue)")
         guard let cookies = response?.cookies, httpStatus == .ok else {
             XCTFail( "Service not working! Cookies list  missing!")
             return
         }
-    
-        // Check server did receive cookie and send it back to client...
-        XCTAssertEqual(cookies[cookieName], cookieValue)
+        XCTAssertEqual(cookies[testCookieName], testCookieValue)
         
-        // Out ApiCaller cookiestore must now contain the cookie
-        let cookie = apiCaller.httpCookies(for: baseUrl)?.filter{ $0.name == cookieName }.first
+        // Then: ... cookie should be stored in store
+        let cookie = getTestCookieFromStore()
+        print(cookie?.description ?? "nil")
+        XCTAssertEqual(cookie?.value, testCookieValue)
         
-        XCTAssertEqual(cookie?.value, cookieValue)
+        // Then: Each time we call server again the cookie is set therfore server returns it again
+        let receivedCookiesByServer = try await getCookiesInServerSession()
         
-        // Check cookie is sent to server again using cookie store
-        let receivedCookiesByServer = try await getCookiesReceivedByServer()
-        
-        XCTAssertEqual(receivedCookiesByServer[cookieName], cookieValue)
+        XCTAssertEqual(receivedCookiesByServer[testCookieName], testCookieValue)
         
     }
+    
 }
 
 
