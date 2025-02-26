@@ -40,6 +40,12 @@ open class LogNetworkInterceptor: URLRequestInterceptor {
         self.enableNetworkTracing = enableNetworkTracing
     }
     
+    private func prettyCookieHeaders(_ cookieList: [HTTPCookie]) -> String {
+        return cookieList.reduce("") { partialResult, cookie in
+            partialResult + "  \"\(cookie.name)\": \"\(cookie.value)\"\n "
+        }
+    }
+    
     public func invokeRequest(request: inout URLRequest, for session: URLSession) {
         
         guard let requestHeaders = request.allHTTPHeaderFields,
@@ -54,9 +60,12 @@ open class LogNetworkInterceptor: URLRequestInterceptor {
         let url = request.url?.absoluteString ?? "nil"
         let method = request.httpMethod ?? "nil"
         
-        
         if enableNetworkTracing {
-            logger.info("Request: \(method) \(url)\nheaders: \(prettyJsonHeaders) \nbody: \(prettyJsonBody)")
+            var prettyCookies = ""
+            if let requestUrl = request.url, let cookieList =  session.configuration.httpCookieStorage?.cookies(for: requestUrl) {
+                prettyCookies = prettyCookieHeaders(cookieList)
+            }
+            logger.info("Request: \(method) \(url)\nheaders: \(prettyJsonHeaders) \ncookieHeaders: { \n\(prettyCookies)} \nbody: \(prettyJsonBody)")
         } else {
             logger.info("Request: \(method) \(url)")
         }

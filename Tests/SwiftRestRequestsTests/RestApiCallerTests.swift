@@ -297,7 +297,6 @@ extension RestApiCallerTests {
         
         // Then: ... cookie should be stored in store
         let cookie = getTestCookieFromStore()
-        print(cookie?.description ?? "nil")
         XCTAssertEqual(cookie?.value, testCookieValue)
         
         // Then: Each time we call server again the cookie is set therfore server returns it again
