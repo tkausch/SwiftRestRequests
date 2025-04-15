@@ -83,7 +83,7 @@ Each REST client method  MUST declare a `throw`. As for non `2xx` HTTP response 
 
 
 ### Define method for a GET endpoint with Response
-```
+```swift
 class ClientApi: RestApiCaller {
     func myGetMethod() async throws -> (HttpBinResponse?, Int) {
         try await self.get(HttpBinResponse.self, at: "get")
@@ -91,7 +91,7 @@ class ClientApi: RestApiCaller {
 }
 ```
 ### Define method for a GET endpoint without Response
-```
+```swift
 extension ClientApi {
     func myStatusGetMethod() async throws -> (Int) {
         try await self.get(at: "status/204")
@@ -99,7 +99,7 @@ extension ClientApi {
 }
 ```
 ### API Client usage
-```
+```swift
 let url =  URL(string: "https://httpbin.org")!
 let client = ClientApi(baseUrl: url)
 
@@ -136,7 +136,7 @@ However it is also possible to use `RestApiCaller` without subclassing and direc
 
 ### Making a GET Request and getting back a Response object
 
-```
+```swift
 struct HttpBinHeaders: Decodable {
     let accept: String
     
@@ -159,7 +159,7 @@ print("Url: \(String(describing: response?.url))")
 ```
 ### Making a POST Request using a Swift 4 Encodable Request object and getting back a Decodable Response object
 
-```
+```swift
 struct HttpBinRequest: Encodable {
 	let key1: String
 	let key2: Int
