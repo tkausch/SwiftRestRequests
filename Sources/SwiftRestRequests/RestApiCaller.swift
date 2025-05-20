@@ -259,7 +259,7 @@ open class RestApiCaller : NSObject {
         let httpStatus = httpResponse.status
         
         // For requests without deserialization and no error just return the status
-        if type(of: responseDeserializer) == VoidDeserializer.self {
+        if type(of: responseDeserializer) == VoidDeserializer.self || httpStatus == .noContent {
             if httpStatus.type == .success {
                 return (nil, httpResponse.status)
             }
