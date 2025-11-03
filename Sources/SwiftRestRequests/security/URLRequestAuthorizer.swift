@@ -38,7 +38,7 @@ public protocol URLRequestAuthorizer {
 /// Configures `Authorization` headers for HTTP Basic authentication.
 public class BasicRequestAuthorizer: URLRequestAuthorizer {
     
-    let logger = Logger.SwiftRestRequests.security
+    let logger: Logger
     
     public let username: String
     public let password: String
@@ -49,9 +49,11 @@ public class BasicRequestAuthorizer: URLRequestAuthorizer {
     /// - Parameters:
     ///   - username: The username to be used for authorization
     ///   - password: The password to be used for authorization
-    public init(username: String, password: String) {
+    ///   - logger: Destination for security trace logging.
+    public init(username: String, password: String, logger: Logger = Logger.SwiftRestRequests.security) {
         self.username = username
         self.password = password
+        self.logger = logger
 
         /// Pre-calculate the header value so we don't do the conversion and encoding on each call
         let credentials = "\(self.username):\(self.password)"
@@ -69,17 +71,20 @@ public class BasicRequestAuthorizer: URLRequestAuthorizer {
 }
 
 /// Configures `Authorization` headers for Bearer token authentication.
-public class BearerReqeustAuthorizer: URLRequestAuthorizer {
+public class BearerRequestAuthorizer: URLRequestAuthorizer {
     
-    let logger = Logger.SwiftRestRequests.security
+    let logger: Logger
     
     // The token value (without `Bearer` prefix) to be used for the HTTP `Authorization` request header.
     public var token: String
     
     /// Creates a Bearer authorization helper with the provided token.
-    /// - Parameter token: Token value (without `Bearer` prefix) inserted into the header.
-    public init(token: String) {
+    /// - Parameters:
+    ///   - token: Token value (without `Bearer` prefix) inserted into the header.
+    ///   - logger: Destination for security trace logging.
+    public init(token: String, logger: Logger = Logger.SwiftRestRequests.security) {
         self.token = token
+        self.logger = logger
     }
     
     /// Applies the Bearer authorization header to the request.
