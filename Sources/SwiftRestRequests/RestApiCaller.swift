@@ -278,6 +278,7 @@ open class RestApiCaller : NSObject {
        
         let httpStatus = httpResponse.status
         
+        // For requests without deserialization and no error just return the status
         if shouldBypassDeserialization(responseDeserializer, status: httpStatus),
            httpStatus.type == .success {
             return (nil, httpStatus)
@@ -286,6 +287,8 @@ open class RestApiCaller : NSObject {
         guard !data.isEmpty  else {
             throw RestError.failedRestCall(httpResponse, httpStatus, error: nil)
         }
+        
+        // Postcondition: We have a response object or  error that needs to be parsed!
         
         _ = try validatedMimeType(from: httpResponse)
         
