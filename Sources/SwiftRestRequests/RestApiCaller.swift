@@ -73,6 +73,8 @@ open class RestApiCaller : NSObject {
     /// Cookie storage used by the session (if provided).
     let httpCookieStorage: HTTPCookieStorage?
     
+    private let interceptorLock = NSLock()
+    
     /// Registered request/response interceptors (empty by default).
     var interceptors: [URLRequestInterceptor] = []
     
@@ -342,6 +344,10 @@ open class RestApiCaller : NSObject {
     /// - Parameter interceptor: Interceptor appended to the invocation chain.
     public func registerRequestInterceptor(_ interceptor: URLRequestInterceptor) {
         logger.info("Registering request interceptor: \(interceptor)")
+        
+        interceptorLock.lock()
+        defer { interceptorLock.unlock() }
+        
         interceptors.append(interceptor)
     }
     
