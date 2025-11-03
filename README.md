@@ -5,141 +5,104 @@
 [![Platforms](https://img.shields.io/badge/Platforms-macOS_iOS_tvOS_watchOS_visionOS_Linux-yellowgreen?style=flat-square)](https://img.shields.io/badge/Platforms-macOS_iOS_tvOS_watchOS_vision_OS_Linux-Green?style=flat-square)
 [![Swift Package Manager](https://img.shields.io/badge/Swift_Package_Manager-compatible-orange?style=flat-square)](https://img.shields.io/badge/Swift_Package_Manager-compatible-orange?style=flat-square)
 
-SwiftRestRequests is an advanced and user-friendly HTTP/REST client library developed in Swift. This package empowers you to effortlessly send REST requests and craft your custom REST API clients. Leveraging Swift 4's Codable support ensures comprehensive type validation for both JSON response and request objects.
+# SwiftRestRequests
 
-This package employs an HTTP client transport mechanism utilizing the URLSession type from the Foundation framework, ensuring seamless performance of HTTP operations. As a result, it adheres entirely to Apple Transport Security (ATS) standards, providing a secure and compliant solution.
+SwiftRestRequests is a lightweight, async/await-first HTTP client written in pure Swift. It helps you build strongly typed REST clients with minimal boilerplate by leaning on Swift's `Codable` system for both request and response models.
 
-## Features
+The library is built on top of Foundation's `URLSession`, so it stays 100% compliant with App Transport Security (ATS) while running everywhere Swift does.
 
-- [x] Easily perform asynchronous REST networking calls `GET, POST, PUT, PATCH, or DELETE` that send JSON
-- [x] Easy API that uses Swift's async/await syntax
-- [x] Natively integrates with Swift's `Decodable` and `Encodable` types
-- [x] HTTP response validation
-- [x] Implement your own HTTP Request Interceptors  
-- [x] Send custom HTTP headers
-- [x] Change request timeout options
-- [x] Basic and Bearer Authorization
-- [x] TLS Certificate and Public Key Pinning
-- [x] Logging support using `swift-log`
-- [x] `OSLogHandler` for unified logging  on Apple ecosystem
+## Highlights
 
+- Async/await API for `GET`, `POST`, `PUT`, `PATCH`, and `DELETE`
+- Automatic encoding/decoding via `Encodable` and `Decodable`
+- Response validation and consistent error handling with `RestError`
+- Request interceptors, custom headers, and configurable timeouts
+- Built-in support for Basic and Bearer auth as well as TLS/public-key pinning
+- Native logging hooks through `swift-log`, including `OSLogHandler` on Apple platforms
 
-### Requirements
+## Requirements
 
-SwiftRestRequests 1.5.6 and newer works with any of the supported operating systems listed below with the version of Xcode.
+SwiftRestRequests 1.6.3+ supports the following minimum environments:
 
 - iOS 15.0+
+- iPadOS 15.0+
 - tvOS 15.0+
 - watchOS 8.0+
-- iPadOS 15.0+
 - macOS 12.0+
-- Linux
+- Linux (Swift 5.7 or newer)
 
-### Swift Package Manager
+> Toolchain: Swift 5.9 (Xcode 15) or newer.
 
-SwiftRestRequests is compatible with the SPM for macOS, iOS, iPadOS, tvOS, and watchOS. When using XCode 11, the Swift Package Manager is the recommended installation method.
+## Installation
 
-To use in XCode 11+, open your project and go to `File->Swift Packages->Add Package Dependency...` and follow along the dialogs. Thats it!
+SwiftRestRequests is distributed as a Swift Package. You can add it via Xcode or directly in your `Package.swift`.
 
-If you prefer to add it manually using SPM, just add the SwiftRestRequests dependency to your target in your `Package.swift` file.
+### Xcode
 
-```
+1. Open your project or workspace.
+2. Choose `File > Add Packages…`
+3. Enter `https://github.com/tkausch/SwiftRestRequests`
+4. Pick the latest release (recommended) and finish the wizard.
+
+### Package.swift
+
+```swift
 dependencies: [
-.package(url: "https://github.com/tkausch/SwiftRestRequests", from: "2.5.6")
+    .package(url: "https://github.com/tkausch/SwiftRestRequests", from: "1.6.3")
 ]
 ```
-### Certificate pinning
 
-You might not know but Apple introduced native support for SSL public key pinning in iOS 14. 
+## Quick Start
 
-If you are not familiar with this native capability I recommend reading Apple’s article [Identity Pinning: How to configure server certificates for your app](https://developer.apple.com/news/?id=g9ejcf8y). Here is a summary:
+A common pattern is to subclass `RestApiCaller` and expose one method per REST endpoint. Each method can return a tuple containing the decoded response and the HTTP status, or just an `Int` status for endpoints without a body.
 
-- You can specify a collection of certificates in your Info.plist that App Transport Security (ATS) expects when connecting to named domains.
-- A pinned CA public key must appear in either an intermediate or root certificate in a certificate chain
-- Pinned keys are always associated with a domain name, and the app will refuse to connect to that domain unless the pinning requirement is met.
-- You can associate multiple public keys with a domain name.
-
-This built-in pinning works well for `URLSession` and therfore as well for SwiftRestRequests.  
-
-However if you prefere API calls for server pinning you find `CertificateCAPinning` and `PublicKeyServerPinning` delegates that can be used together with `HttpSession`.
-
-
-## Write a REST Client API
-
- A best practice to write REST API clients is to subclass `RestApiCaller` and implement a method for each of your REST service endpoints. These speciofic implementation methods should delegate to  the generic `get, post, put, delete or put` methods of the `RestApiCaller`super class. 
- 
- The request and response types used for each REST client method MUST implement the `Encodable` or `Decodable` protocol. You do normally define request and response structs using some general business model objects. These model objects implement the `Codeable` protocol so they can be used in both response or request types. 
- 
-
-### Map REST endpoints to API client methods
-
-Each endpoint of your REST API should be mapped to a different implementation method.  The implementation method always return
-
--   A **Tuple** ` -> (responstObject: T?, httpStatus: Int)`: When your REST endpoint can return data in it's response body. Note: Deserializtaion to Type `T` takes place only when HTTP status `200` is returned. All other HTTP response status codes will return `nil` for the response object.
-
--  or an **Integer**` -> Int`: When your REST endpoint does not return data in it's response body - only HTTP status is returned.
-
-Each REST client method  MUST declare a `throw`. As for non `2xx` HTTP response status codes a `RestError` is thrown. That error contains the HTTP response status code and an optional JSON error object. The error JSON object is deserialized from the response body with the error `Deserializer`assigned to the API caller. When no error deserializer is assigned the raw String from the response body is returned (or `nil` if there isn't one) .
-
-
-### Define method for a GET endpoint with Response
 ```swift
-class ClientApi: RestApiCaller {
+final class ClientApi: RestApiCaller {
     func myGetMethod() async throws -> (HttpBinResponse?, Int) {
-        try await self.get(HttpBinResponse.self, at: "get")
+        try await get(HttpBinResponse.self, at: "get")
+    }
+
+    func myStatusGetMethod() async throws -> Int {
+        try await get(at: "status/204")
     }
 }
-```
-### Define method for a GET endpoint without Response
-```swift
-extension ClientApi {
-    func myStatusGetMethod() async throws -> (Int) {
-        try await self.get(at: "status/204")
-    }
-}
-```
-### API Client usage
-```swift
-let url =  URL(string: "https://httpbin.org")!
-let client = ClientApi(baseUrl: url)
+
+let baseURL = URL(string: "https://httpbin.org")!
+let client = ClientApi(baseUrl: baseURL)
 
 Task {
-    
     do {
-        
-        let (response , httpStatus) = try await client.myGetMethod()
-        
-        print("HttpStatus: \(httpStatus)")
-        
-        if let response {
-            print("Url: \(String(describing: response.url))")
-            print("Origin: \(String(describing: response.origin))")
-            print("Accept header: \(String(describing: response.headers.accept))")
-        } else {
-            print("No response")
-        }
-        
-    } catch RestError.failedRestCall(let httpResponse, let httpStatus, let error) {
-       
-        print("REST service Failed with status: \(httpStatus)")
-        print("Got response: \(httpResponse)")
-        print("Got error: \(String(describing: error))")
-       
+        let (response, status) = try await client.myGetMethod()
+
+        print("Status:", status)
+        print("URL:", response?.url ?? "n/a")
+        print("Origin:", response?.origin ?? "n/a")
+        print("Accept header:", response?.headers.accept ?? "n/a")
+    } catch RestError.failedRestCall(let httpResponse, let status, let error) {
+        print("Request failed with status:", status)
+        print("Response:", httpResponse)
+        print("Error:", String(describing: error))
     }
-        
 }
 ```
 
-## Usage of RestAPICaller 
+The request and response types you pass into `RestApiCaller` must conform to `Encodable` and `Decodable` (or `Codable` when you need both directions). Using shared model objects keeps your API definitions concise and strongly typed.
 
-However it is also possible to use `RestApiCaller` without subclassing and directly call your REST endpoints. This approach is straight forward. 
+## Using `RestApiCaller` Directly
 
-### Making a GET Request and getting back a Response object
+You can also create an instance of `RestApiCaller` and call endpoints without subclassing.
+
+```swift
+let baseURL = URL(string: "https://httpbin.org")!
+let apiCaller = RestApiCaller(baseUrl: baseURL)
+```
+
+### GET request returning a decoded response
 
 ```swift
 struct HttpBinHeaders: Decodable {
     let accept: String
-    
+
     enum CodingKeys: String, CodingKey {
         case accept = "Accept"
     }
@@ -151,34 +114,56 @@ struct HttpBinResponse: Decodable {
     let headers: HttpBinHeaders
 }
 
-let (response , httpStatus) = try await apiCaller.get(HttpBinResponse.self, at: "get")
-    
-print("HttpStatus: \(httpStatus)")
-print("Url: \(String(describing: response?.url))")
+let (response, status) = try await apiCaller.get(HttpBinResponse.self, at: "get")
 
+print("Status:", status)
+print("URL:", response?.url ?? "n/a")
 ```
-### Making a POST Request using a Swift 4 Encodable Request object and getting back a Decodable Response object
+
+### POST request with an `Encodable` payload
 
 ```swift
 struct HttpBinRequest: Encodable {
-	let key1: String
-	let key2: Int
-	let key3: Float
-	let key4: Bool
-	let key5: [Int]
+    let key1: String
+    let key2: Int
+    let key3: Float
+    let key4: Bool
+    let key5: [Int]
 }
-        
+
 struct HttpBinResponse: Decodable {
-	let json: HttpBinRequest
+    let json: HttpBinRequest
 }
 
-let request = HttpBinRequest(key1: "Hello", key2: 1, key3: 2.0, key4: true, key5: [1,2,3,4,5])
-        
-        
-let (response, httpStatus) = 
-	try await apiCaller.post(request, at: "post", responseType: HttpBinResponse.self)
+let request = HttpBinRequest(key1: "Hello", key2: 1, key3: 2.0, key4: true, key5: [1, 2, 3, 4, 5])
 
-print("\(response?.json)"
+let (response, status) = try await apiCaller.post(request, at: "post", responseType: HttpBinResponse.self)
 
+print("Status:", status)
+print("JSON payload:", response?.json ?? request)
 ```
 
+## Certificate Pinning
+
+Apple added native support for SSL public key pinning in iOS 14 (and the corresponding platform releases). The recommended reading is Apple’s article [Identity Pinning: How to configure server certificates for your app](https://developer.apple.com/news/?id=g9ejcf8y).
+
+Key takeaways:
+
+- Declare trusted certificates in `Info.plist` so ATS knows what to expect per domain.
+- A pinned CA key must appear in either an intermediate or a root certificate.
+- Pins are domain-bound; connections are rejected when the requirement is not met.
+- Multiple public keys can be associated with a single domain.
+
+This native pinning works seamlessly with `URLSession`, and therefore with SwiftRestRequests. If you prefer to manage pinning in code, use the built-in `CertificateCAPinning` and `PublicKeyServerPinning` delegates alongside `HttpSession`.
+
+## Logging and Observability
+
+SwiftRestRequests integrates with the [swift-log](https://github.com/apple/swift-log) ecosystem. Plug in your preferred logging backend or use the provided `OSLogHandler` for unified logging across Apple platforms.
+
+## Request Interceptors
+
+Implement custom interceptors to mutate requests or responses, e.g. to inject headers, refresh tokens, or track analytics. Interceptors run before the request is sent and after the response is received, giving you full control over the network pipeline.
+
+## Need Help?
+
+Check the `Examples` directory (coming soon) or open a GitHub discussion with questions and ideas. Contributions are welcome—feel free to submit issues or pull requests!
