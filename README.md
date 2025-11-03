@@ -164,6 +164,15 @@ SwiftRestRequests integrates with the [swift-log](https://github.com/apple/swift
 
 Implement custom interceptors to mutate requests or responses, e.g. to inject headers, refresh tokens, or track analytics. Interceptors run before the request is sent and after the response is received, giving you full control over the network pipeline.
 
+- `LogNetworkInterceptor` (`Sources/SwiftRestRequests/interceptors/LogNetworkInterceptor.swift`) records requests/responses and can stream verbose network traces in debug builds.
+- `AuthorizerInterceptor` (`Sources/SwiftRestRequests/security/AuthorizerInterceptor.swift`) bridges a `URLRequestAuthorizer` to automatically attach auth headers.
+- Register interceptors with `registerRequestInterceptor(_:)` on the `RestApiCaller` instance; they fire in the order they are added and share the same `URLSession`.
+- For TLS pinning helpers see `CertificateCAPinning` and `PublicKeyServerPinning` in `Sources/SwiftRestRequests/security`.
+
 ## Need Help?
 
 Check the `Examples` directory (coming soon) or open a GitHub discussion with questions and ideas. Contributions are welcome—feel free to submit issues or pull requests!
+
+## Contributing
+
+We welcome contributions of all sizes. Read `CONTRIBUTING.md` for setup instructions, coding standards, and release guidelines before opening a pull request.
