@@ -29,13 +29,13 @@ import FoundationNetworking
 
 
 
-/// `URLRequestAuthenticator` will a authentication
+/// Protocol adopted by components that can apply authentication headers to requests.
 public protocol URLRequestAuthorizer {
-    /// Configures URL request authorization header
+    /// Updates the request with the appropriate authorization header.
     func configureAuthorizationHeader(for urlRequest: inout URLRequest);
 }
 
-/// `AuthorizationDelegate` used to configure HTTP header for basic authorization.
+/// Configures `Authorization` headers for HTTP Basic authentication.
 public class BasicRequestAuthorizer: URLRequestAuthorizer {
     
     let logger = Logger.SwiftRestRequests.security
@@ -45,7 +45,7 @@ public class BasicRequestAuthorizer: URLRequestAuthorizer {
 
     private let headerValue: String
     
-    /// Cretae basic authorization with `username` and `password`.
+    /// Creates a Basic authorization header from the provided credentials.
     /// - Parameters:
     ///   - username: The username to be used for authorization
     ///   - password: The password to be used for authorization
@@ -59,6 +59,7 @@ public class BasicRequestAuthorizer: URLRequestAuthorizer {
         self.headerValue = "Basic \(base64EncodedCredentials)"
     }
 
+    /// Applies the precomputed Basic authorization header to the request.
     public func configureAuthorizationHeader(for urlRequest: inout URLRequest) {
         logger.trace("Set HTTP Authorization header",  metadata: [
             "urlRequest": "\(String(describing: urlRequest.url?.absoluteString))",
@@ -67,7 +68,7 @@ public class BasicRequestAuthorizer: URLRequestAuthorizer {
     }
 }
 
-/// `AuthorizationDelegate` used to configure HTTP header for bearer authorization.
+/// Configures `Authorization` headers for Bearer token authentication.
 public class BearerReqeustAuthorizer: URLRequestAuthorizer {
     
     let logger = Logger.SwiftRestRequests.security
@@ -75,12 +76,13 @@ public class BearerReqeustAuthorizer: URLRequestAuthorizer {
     // The token value (without `Bearer` prefix) to be used for the HTTP `Authorization` request header.
     public var token: String
     
-    /// Createt bearer authorization with given `token
-    /// - Parameter token: Already base 64 encodced token used for bearer
+    /// Creates a Bearer authorization helper with the provided token.
+    /// - Parameter token: Token value (without `Bearer` prefix) inserted into the header.
     public init(token: String) {
         self.token = token
     }
     
+    /// Applies the Bearer authorization header to the request.
     public func configureAuthorizationHeader(for urlRequest: inout URLRequest) {
         logger.trace("Set HTTP Authorization header", metadata: [
             "Authorization": "Bearer \(self.token)"])
@@ -89,10 +91,12 @@ public class BearerReqeustAuthorizer: URLRequestAuthorizer {
 }
 
 
+/// No-op authorizer used when requests must remain unauthenticated.
 public class NoneAuthorizer: URLRequestAuthorizer {
     
     public init() {}
     
+    /// Leaves the request untouched.
     public func configureAuthorizationHeader(for urlRequest: inout URLRequest) {
         // do nothing!
     }

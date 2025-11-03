@@ -28,12 +28,15 @@
 
 import Logging
 
+/// URLSession delegate that enforces TLS validation against a curated list of CA certificates.
 public final class CertificateCAPinning: NSObject, URLSessionDelegate {
     
     let pinnedCACertificates: [SecCertificate]
     
     let logger = Logger.SwiftRestRequests.security
     
+    /// Creates a new pinning delegate.
+    /// - Parameter pinnedCACertificates: Certificates that must appear somewhere in the server's trust chain.
     public init(pinnedCACertificates: [SecCertificate]) {
         self.pinnedCACertificates = pinnedCACertificates
         logger.info("Initialized CertificateCAPinning", metadata: [
@@ -41,6 +44,7 @@ public final class CertificateCAPinning: NSObject, URLSessionDelegate {
         ])
     }
     
+    /// Validates the server trust against the pinned CA certificates.
     public func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
         
         guard let serverTrust = challenge.protectionSpace.serverTrust else {

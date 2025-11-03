@@ -307,6 +307,7 @@ public enum HTTPStatusCode: Int, Encodable, Decodable, Sendable  {
 
 extension HTTPURLResponse {
     
+    /// Convenience bridge exposing the status code as `HTTPStatusCode`.
     var status: HTTPStatusCode {
         return HTTPStatusCode(rawValue: self.statusCode) ?? HTTPStatusCode.undefined
     }

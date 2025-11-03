@@ -22,8 +22,7 @@
 import Foundation
 
 
-/// Type representing HTTP methods. Raw `String` value is stored and compared case-sensitively.
-///
+/// Strongly typed representation of supported HTTP methods.
 internal enum HTTPMethod: String {
     case post = "POST"
     case patch = "PATCH"
@@ -33,6 +32,7 @@ internal enum HTTPMethod: String {
     
 }
 
+/// MIME types referenced throughout the client.
 internal enum MimeType: String {
     case ApplicationJson =  "application/json"
     case TextPlain = "text/plain"
@@ -41,10 +41,10 @@ internal enum MimeType: String {
     case Void = "*/*"
 }
 
+/// Standard HTTP header keys used internally.
 internal enum HTTPHeaderKeys: String {
     case ContentType = "Content-Type"
     case Accept = "Accept"
 }
-
 
 

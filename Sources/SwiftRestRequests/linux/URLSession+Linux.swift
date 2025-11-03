@@ -25,6 +25,7 @@ import Foundation
 import FoundationNetworking
 
 extension URLSession {
+  /// Async/await wrapper around `dataTask` for Linux FoundationNetworking.
   func data(for request: URLRequest) async throws -> (Data, URLResponse) {
     return try await withCheckedThrowingContinuation { continuation in
       let task = self.dataTask(with: request) { (data, response, error) in

@@ -25,14 +25,17 @@ import FoundationNetworking
 #endif
 
 
+/// Interceptor that injects authorization headers using a `URLRequestAuthorizer`.
 public class AuthorizerInterceptor: URLRequestInterceptor {
     
+    /// Authorizer applied to each request.
     public let authorizer: URLRequestAuthorizer
     
     init(authorization: URLRequestAuthorizer) {
         self.authorizer = authorization
     }
     
+    /// Applies the authorizer to the outgoing request.
     public func invokeRequest(request: inout URLRequest, for session: URLSession) {
         authorizer.configureAuthorizationHeader(for: &request)
     }

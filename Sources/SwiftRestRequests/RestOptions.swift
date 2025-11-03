@@ -22,7 +22,10 @@
 import Foundation
 
 
-/// Options for `RestController` calls. Allows you to set an expected HTTP status code, HTTP Headers, or to modify the request timeout.
+/// Customisation options that apply to a single REST invocation.
+///
+/// Use `RestOptions` to override headers, query parameters, expected status codes, or the timeout without
+/// mutating the base `RestApiCaller` configuration.
 public struct RestOptions {
 
     /// An optional set of HTTP Headers to send with the call.
@@ -34,9 +37,12 @@ public struct RestOptions {
     /// An optional set of query parameters to send with the call.
     public var queryParameters: [String: String]?
     
-    /// The http status codes the service is expecting to throw. Default is nil - all status codes allwed. 
-    /// Note: If services returns another HTTP status code this will triggger an error during the call.
+    /// HTTP status codes that should be treated as success for the request. When `nil` every
+    /// code accepted by the underlying deserializer is treated as success.
+    ///
+    /// Any response outside of this set triggers a `RestError.unexpectedHttpStatusCode`.
     public var expectedStatusCodes: [HTTPStatusCode]?
     
+    /// Creates a new instance with default timeout and without overrides.
     public init() {}
 }

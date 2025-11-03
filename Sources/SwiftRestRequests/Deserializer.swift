@@ -21,14 +21,15 @@
 
 import Foundation
 
-/// Protocol for de-serializing responses from the web server.
+/// Deserializes raw network data into strongly typed Swift values.
 public protocol Deserializer {
 
     associatedtype ResponseType: Sendable
 
-    /// The `Accept` Hader to send in the request, ex: `application/json`
+    /// Value for the `Accept` header sent alongside the request (for example `application/json`).
     var acceptHeader: String { get }
 
+    /// Creates a new instance of the deserializer.
     init()
 
     /// Deserializes the data returned by the web server to the desired type.
@@ -38,7 +39,7 @@ public protocol Deserializer {
 }
 
 
-/// A `Deserializer` for Swift 4's `Decodable` protocol
+/// A generic deserializer that uses `JSONDecoder` to decode a `Decodable` value.
 public final class DecodableDeserializer<T: Decodable & Sendable>: Deserializer {
 
     public typealias ResponseType = T
@@ -53,7 +54,7 @@ public final class DecodableDeserializer<T: Decodable & Sendable>: Deserializer 
 }
 
 
-/// A `Deserializer` for `Void` (for use with servers that return no data).
+/// A deserializer representing empty responses (`Void`).
 public final class VoidDeserializer: Deserializer {
 
     public typealias ResponseType = Void
@@ -69,7 +70,7 @@ public final class VoidDeserializer: Deserializer {
 }
 
 
-/// A `Deserializer` for `Data`
+/// A deserializer that emits the raw payload `Data`.
 public final class DataDeserializer: Deserializer {
 
     public typealias ResponseType = Data

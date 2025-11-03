@@ -3,6 +3,8 @@
 
 name: iOS Library CI
 
+name: Swift
+
 on:
   push:
     branches: [ "main" ]
@@ -12,31 +14,14 @@ on:
 jobs:
   build:
     runs-on: macos-latest
-
     steps:
+      - uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "5.9"
+      - name: Get swift version
+        run: swift --version
       - uses: actions/checkout@v4
-
-      - name: Select Xcode 16.4
-        run: sudo xcode-select -s /Applications/Xcode_16.4.app
-
-      - name: Show SDKs (debug)
-        run: xcodebuild -showsdks
-
-      # Replace "SwiftRestRequests" with your actual package or scheme name
-      - name: Build for iOS Simulator
-        run: |
-          xcodebuild \
-            -scheme SwiftRestRequests \
-            -sdk iphonesimulator \
-            -destination 'generic/platform=iOS Simulator' \
-            -configuration Debug \
-            clean build
-
-      - name: Run tests on iPhone simulator
-        run: |
-          xcodebuild \
-            -scheme SwiftRestRequests \
-            -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 16' \
-            -configuration Debug \
-            test
+      - name: Build
+        run: swift build -v
+      - name: Run tests
+        run: swift test -v
