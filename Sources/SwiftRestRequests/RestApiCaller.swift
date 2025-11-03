@@ -29,20 +29,26 @@ import Logging
 
 // MARK: - Protocols used by RestapiCaller
 
-/// Allows users to generate headers before each REST call is made. The headers returned will be COMBINED with
-/// any headers set in the original `RestCaller` call. Any headers returned here will override the values given
-/// in the original call if they have the same name.
+/// Closure invoked before a request is sent to assemble additional HTTP headers.
 ///
-/// - parameter requestUrl: The URL that this header generation request is for. Never nu,,
+/// The generated headers are merged with the headers specified per call. Keys returned by the closure override
+/// existing values, making it convenient to inject authentication or device metadata that changes at runtime.
 public typealias HeaderGenerator = (URL) -> [String : String]?
 
-/// A request interceptor is used to intercept  REST requests and responses. It can be used to change underlying HTTP  requests or responses.
+/// Abstraction for intercepting outgoing requests and incoming responses.
+///
+/// Interceptors can mutate the `URLRequest` before it is sent or observe the `HTTPURLResponse` and payload
+/// after it is received. Register interceptors on `RestApiCaller` to build cross-cutting features such as
+/// logging, analytics, or header injection.
 public protocol URLRequestInterceptor: AnyObject {
+    /// Called immediately before the request is executed. Mutate `request` in place to apply changes.
     func invokeRequest(request: inout URLRequest, for session: URLSession);
+    /// Called after the response has been received. The default implementation does nothing.
     func receiveResponse(data: Data, response: HTTPURLResponse, for session: URLSession);
 }
 
 extension URLRequestInterceptor {
+    /// Default no-op implementation to make `receiveResponse` optional for conformers.
     public func receiveResponse(data: Data, response: HTTPURLResponse, for session: URLSession) {
         // default empty implementation for optional method
     }
@@ -50,34 +56,44 @@ extension URLRequestInterceptor {
 
 // MARK: - The Main class
 
-/// Allows users to create HTTP REST networking calls that deal with JSON.
+/// High-level HTTP client that handles JSON encoding/decoding, status validation, and error mapping.
 ///
 /// **NOTE:** Ensure to configure `App Transport Security` appropriately.
 open class RestApiCaller : NSObject {
     
+    /// Shared logger used to emit diagnostic messages for the caller lifecycle.
     let logger = Logger.SwiftRestRequests.apiCaller
 
+    /// Backing `URLSession` used to execute requests.
     let session: URLSession
+    /// Base URL that relative endpoint paths are appended to.
     let baseUrl: URL
+    /// Optional deserializer for error payloads.
     let errorDeserializer: (any Deserializer)?
+    /// Cookie storage used by the session (if provided).
     let httpCookieStorage: HTTPCookieStorage?
     
-    /// Contains an optional  array of request interceptors.
+    /// Registered request/response interceptors.
     var interceptors:  [URLRequestInterceptor]?
     
-    /// This header generator closure will be called before the caller is invoking the HTTP request. The returned headers are inserted into the request before invoking it.
+    /// Closure used to generate dynamic headers prior to each request.
     public let headerGenerator: HeaderGenerator?
     
+    /// Authorizer that can mutate requests with authentication information.
     public let authorizer: URLRequestAuthorizer?
 
 // MARK: Lifecycle
     
     
-    /// Convenience initializer to create new `RestApiCaller`instances. Each instance will  create it's own `URLSession` object using the porvided `URLSessionConfiguration`.
+    /// Convenience initializer that provisions its own `URLSession` from the supplied configuration.
     /// - Parameters:
-    ///   - baseUrl: The base URL to which requests are sent.
-    ///   - sessionConfig: The session coniguration to be used
-    ///   - errorDeserializer: An optional error deserializer that can be used to deserialize generic error JSON.
+    ///   - baseUrl: The base URL for all subsequent REST calls.
+    ///   - sessionConfig: Configuration used to create the underlying `URLSession`.
+    ///   - authorizer: Optional request authorizer added as an interceptor.
+    ///   - errorDeserializer: Custom deserializer for error payloads.
+    ///   - headerGenerator: Closure producing dynamic headers per request.
+    ///   - enableNetworkTrace: When `true`, installs `LogNetworkInterceptor` (non-Linux platforms only).
+    ///   - httpCookieStorage: Optional cookie storage injected into the session configuration.
     public convenience init(baseUrl: URL, sessionConfig:  
                             URLSessionConfiguration = URLSessionConfiguration.default,
                             authorizer: URLRequestAuthorizer? = nil,
@@ -92,15 +108,19 @@ open class RestApiCaller : NSObject {
             sessionConfig.httpCookieStorage = httpCookieStorage
         }
         
-        self.init(baseUrl: baseUrl, urlSession: URLSession(configuration: sessionConfig), authorizer: authorizer, errorDeserializer: errorDeserializer, headerGenerator: nil, enableNetworkTrace: enableNetworkTrace, httpCookieStorage: httpCookieStorage)
+        self.init(baseUrl: baseUrl, urlSession: URLSession(configuration: sessionConfig), authorizer: authorizer, errorDeserializer: errorDeserializer, headerGenerator: headerGenerator, enableNetworkTrace: enableNetworkTrace, httpCookieStorage: httpCookieStorage)
     }
 
     
-    ///  Creates a fully functional RestApi Caller with full flexiblilty to configure.
+    /// Designated initializer that accepts a pre-configured `URLSession`.
     /// - Parameters:
     ///   - baseUrl: The base URL to which requests are sent.
-    ///   - urlSession: The session coniguration to be used. Note: You can fully configure this session i.e. using delegates.
-    ///   - errorDeserializer: An optional error deserializer that can be used to deserialize generic error JSON.
+    ///   - urlSession: Pre-built session used for network requests. Configure delegates or caching as needed.
+    ///   - authorizer: Optional request authorizer added as an interceptor.
+    ///   - errorDeserializer: Custom deserializer for error payloads.
+    ///   - headerGenerator: Closure producing dynamic headers per request.
+    ///   - enableNetworkTrace: Enables network tracing through `LogNetworkInterceptor` (non-Linux platforms).
+    ///   - httpCookieStorage: Cookie storage associated with the session.
     public init(baseUrl: URL, urlSession: URLSession, authorizer: URLRequestAuthorizer?, errorDeserializer: (any Deserializer)?, headerGenerator: HeaderGenerator?, enableNetworkTrace: Bool, httpCookieStorage: HTTPCookieStorage?) {
         self.baseUrl = baseUrl
         self.errorDeserializer = errorDeserializer
@@ -321,8 +341,9 @@ open class RestApiCaller : NSObject {
     
 // MARK: Public API that can be used from other classes or subclass
     
-    /// Add request interceptor to the api caller.
-    /// - Parameter interceptor: The interceptor to be called
+    /// Registers a request interceptor to observe or mutate network traffic.
+    /// Interceptors run in the order they are registered and share the caller's `URLSession` instance.
+    /// - Parameter interceptor: Interceptor appended to the invocation chain.
     public func registerRequestInterceptor(_ interceptor: URLRequestInterceptor) {
         logger.info("Registering request interceptor: \(interceptor)")
         if  self.interceptors == nil {
@@ -331,42 +352,35 @@ open class RestApiCaller : NSObject {
         interceptors!.append(interceptor)
     }
     
-    /// Performs a GET request to the server, capturing the data object type response from the server.
-    ///
-    /// Note: This is an **asynchronous** call and will return immediately.  The network operation is done in the background.
-    ///
-    /// - parameter type: The type of object this get call returns. This type must conform to `Decodable`
-    /// - parameter relativePath: An **optional** parameter of a relative path of this inscatnaces main URL as setup at when created.
-    /// - parameter options: An **optional** parameter of a `RestOptions` struct containing any header fields to include with the call or a different expected status code.
-    /// - returns: A  `Decodable` type of `D` object that was returned from the server or nil together with returned successful httpStatus.
+    /// Executes an asynchronous `GET` request and decodes the JSON response.
+    /// - Parameters:
+    ///   - type: The expected response type used for generic inference.
+    ///   - relativePath: Path appended to the base URL. Pass `nil` to target the base URL without additional path components.
+    ///   - options: Per-call overrides such as headers, query parameters, timeouts, or expected status codes.
+    /// - Returns: Tuple containing the decoded response (only returned for `200 OK`) and the response status code.
     public func get<D: Decodable & Sendable>(_ type: D.Type, at relativePath: String?, options: RestOptions = RestOptions()) async throws -> (D?, HTTPStatusCode) {
         let decodableDeserializer = DecodableDeserializer<D>()
         return try await makeCall(relativePath, httpMethod: .get, payload: nil, responseDeserializer: decodableDeserializer, options: options)
     }
     
-    /// Performs a GET request to the server, capturing the data object type response from the server.
-    ///
-    /// Note: This is an **asynchronous** call and will return immediately.  The network operation is done in the background.
-    ///
-    /// - parameter type: The type of object this get call returns.
-    /// - parameter relativePath: An **optional** parameter of a relative path of this inscatnaces main URL as setup at when created.
-    /// - parameter options: An **optional** parameter of a `RestOptions` struct containing any header fields to include with the call or a different expected status code.
-    /// - returns: The successful HTTP response status.
+    /// Executes an asynchronous `GET` request that expects an empty body.
+    /// - Parameters:
+    ///   - relativePath: Path appended to the base URL. Pass `nil` to target the base URL without additional path components.
+    ///   - options: Per-call overrides such as headers, query parameters, timeouts, or expected status codes.
+    /// - Returns: HTTP status returned by the server.
     public func get(at relativePath: String?, options: RestOptions = RestOptions()) async throws -> HTTPStatusCode {
         let decodableDeserializer = VoidDeserializer()
         let ( _ , httpStatus) = try await makeCall(relativePath, httpMethod: .get, payload: nil, responseDeserializer: decodableDeserializer, options: options)
         return httpStatus
     }
 
-    /// Performs a POST request to the server, capturing the `JSON` response from the server.
-    ///
-    /// Note: This is an **asynchronous** call and will return immediately.  The network operation is done in the background.
-    ///
-    /// - parameter encodable: Any object that can be encoded.
-    /// - parameter relativePath: An **optional** parameter of a relative path of this inscatnaces main URL as setup at when created.
-    /// - parameter responseType: The type of object this get call returns. This type must conform to `Decodable`
-    /// - parameter options: An **optional** parameter of a `RestOptions` struct containing any header fields to include with the call or a different expected status code.
-    /// - returns: A  `Decodable` tyoe of `D` object that was returned from the server or nil together with returned successful httpStatus.
+    /// Executes an asynchronous `POST` request and decodes the JSON response.
+    /// - Parameters:
+    ///   - encodable: Request payload encoded as JSON.
+    ///   - relativePath: Path appended to the base URL. Pass `nil` to target the base URL without additional path components.
+    ///   - type: The expected response type used for generic inference.
+    ///   - options: Per-call overrides such as headers, query parameters, timeouts, or expected status codes.
+    /// - Returns: Tuple containing the decoded response (only returned for `200 OK`) and the response status code.
     public func post<E: Encodable, D: Decodable & Sendable>(_ encodable: E, at relativePath: String?, responseType type: D.Type, options: RestOptions = RestOptions()) async throws -> (D?, HTTPStatusCode) {
         let payload = try JSONEncoder().encode(encodable)
         let decodableDeserializer = DecodableDeserializer<D>()
@@ -374,15 +388,12 @@ open class RestApiCaller : NSObject {
     }
     
     
-    /// Performs a POST request to the server without capturing response. Only successful httpStatus is returned!
-    ///
-    /// Note: This is an **asynchronous** call and will return immediately.  The network operation is done in the background.
-    ///
-    /// - parameter encodable: Any object that can be encoded.
-    /// - parameter relativePath: An **optional** parameter of a relative path of this inscatnaces main URL as setup at when created.
-    /// - parameter responseType: The type of object this get call returns. This type must conform to `Decodable`
-    /// - parameter options: An **optional** parameter of a `RestOptions` struct containing any header fields to include with the call or a different expected status code.
-    /// - returns: The successful HTTP response status.
+    /// Executes an asynchronous `POST` request that expects an empty response body.
+    /// - Parameters:
+    ///   - encodable: Request payload encoded as JSON.
+    ///   - relativePath: Path appended to the base URL. Pass `nil` to target the base URL without additional path components.
+    ///   - options: Per-call overrides such as headers, query parameters, timeouts, or expected status codes.
+    /// - Returns: HTTP status returned by the server.
     public func post<E: Encodable>(_ encodable: E, at relativePath: String?, options: RestOptions = RestOptions()) async throws -> HTTPStatusCode {
         let payload = try JSONEncoder().encode(encodable)
         let decodableDeserializer = VoidDeserializer()
@@ -392,15 +403,13 @@ open class RestApiCaller : NSObject {
     
     
     
-    /// Performs a PUT request to the server, capturing the `JSON` response from the server.
-    ///
-    /// Note: This is an **asynchronous** call and will return immediately.  The network operation is done in the background.
-    ///
-    /// - parameter encodable: Any object that can be encoded.
-    /// - parameter relativePath: An **optional** parameter of a relative path of this inscatnaces main URL as setup at when created.
-    /// - parameter responseType: The type of object this get call returns. This type must conform to `Decodable`
-    /// - parameter options: An **optional** parameter of a `RestOptions` struct containing any header fields to include with the call or a different expected status code.
-    /// - returns: A  `Decodable` tyoe of `D` object that was returned from the server or nil together with returned successful httpStatus.
+    /// Executes an asynchronous `PUT` request and decodes the JSON response.
+    /// - Parameters:
+    ///   - encodable: Request payload encoded as JSON.
+    ///   - relativePath: Path appended to the base URL. Pass `nil` to target the base URL without additional path components.
+    ///   - type: The expected response type used for generic inference.
+    ///   - options: Per-call overrides such as headers, query parameters, timeouts, or expected status codes.
+    /// - Returns: Tuple containing the decoded response (only returned for `200 OK`) and the response status code.
     public func put<E: Encodable, D: Decodable & Sendable>(_ encodable: E, at relativePath: String?, responseType type: D.Type, options: RestOptions = RestOptions()) async throws -> (D?, HTTPStatusCode) {
         let payload = try JSONEncoder().encode(encodable)
         let decodableDeserializer = DecodableDeserializer<D>()
@@ -409,14 +418,13 @@ open class RestApiCaller : NSObject {
     
     /// Performs a PUT request to the server, capturing the HTTP response status.
     ///
-    /// Note: This is an **asynchronous** call and will return immediately.  The network operation is done in the background.
-    ///
-    /// - parameter encodable: Any object that can be encoded.
-    /// - parameter relativePath: An **optional** parameter of a relative path of this inscatnaces main URL as setup at when created.
-    /// - parameter responseType: The type of object this get call returns. This type must conform to `Decodable`
-    /// - parameter options: An **optional** parameter of a `RestOptions` struct containing any header fields to include with the call or a different expected status code.
-    /// - returns: The successful HTTP response status.
-    public func put<E: Encodable>(_ encodable: E, at relativePath: String?, options: RestOptions = RestOptions()) async throws ->  HTTPStatusCode {
+    /// Executes an asynchronous `PUT` request that expects an empty response body.
+    /// - Parameters:
+    ///   - encodable: Request payload encoded as JSON.
+    ///   - relativePath: Path appended to the base URL. Pass `nil` to target the base URL without additional path components.
+    ///   - options: Per-call overrides such as headers, query parameters, timeouts, or expected status codes.
+    /// - Returns: HTTP status returned by the server.
+    public func put<E: Encodable>(_ encodable: E, at relativePath: String?, options: RestOptions = RestOptions()) async throws -> HTTPStatusCode {
         let payload = try JSONEncoder().encode(encodable)
         let voidDeserializer = VoidDeserializer()
         let (_, httpStatus) = try await makeCall(relativePath, httpMethod: .put, payload: payload, responseDeserializer: voidDeserializer, options: options)
@@ -424,30 +432,26 @@ open class RestApiCaller : NSObject {
     }
     
     
-    /// Performs a DELETE request to the server, capturing the `JSON` response from the server.
-    ///
-    /// Note: This is an **asynchronous** call and will return immediately.  The network operation is done in the background.
-    ///
-    /// - parameter encodable: Any object that can be encoded.
-    /// - parameter relativePath: An **optional** parameter of a relative path of this inscatnaces main URL as setup at when created.
-    /// - parameter responseType: The type of object this get call returns. This type must conform to `Decodable`
-    /// - parameter options: An **optional** parameter of a `RestOptions` struct containing any header fields to include with the call or a different expected status code.
-    /// - returns: A  `Decodable` tyoe of `D` object that was returned from the server or nil together with returned successful httpStatus.
+    /// Executes an asynchronous `DELETE` request and decodes the JSON response.
+    /// - Parameters:
+    ///   - encodable: Request payload encoded as JSON.
+    ///   - relativePath: Path appended to the base URL. Pass `nil` to target the base URL without additional path components.
+    ///   - type: The expected response type used for generic inference.
+    ///   - options: Per-call overrides such as headers, query parameters, timeouts, or expected status codes.
+    /// - Returns: Tuple containing the decoded response (only returned for `200 OK`) and the response status code.
     public func delete<E: Encodable, D: Decodable & Sendable>(_ encodable: E, at relativePath: String?, responseType type: D.Type, options: RestOptions = RestOptions()) async throws -> (D?, HTTPStatusCode) {
         let payload = try JSONEncoder().encode(encodable)
         let decodableDeserializer = DecodableDeserializer<D>()
         return try await makeCall(relativePath, httpMethod: .delete, payload: payload, responseDeserializer: decodableDeserializer, options: options)
     }
     
-    /// Performs a PATCH request to the server, capturing the `JSON` response from the server.
-    ///
-    /// Note: This is an **asynchronous** call and will return immediately.  The network operation is done in the background.
-    ///
-    /// - parameter encodable: Any object that can be encoded.
-    /// - parameter relativePath: An **optional** parameter of a relative path of this inscatnaces main URL as setup at when created.
-    /// - parameter responseType: The type of object this get call returns. This type must conform to `Decodable`
-    /// - parameter options: An **optional** parameter of a `RestOptions` struct containing any header fields to include with the call or a different expected status code.
-    /// - returns: A  `Decodable` tyoe of `D` object that was returned from the server or nil together with returned successful httpStatus.
+    /// Executes an asynchronous `PATCH` request and decodes the JSON response.
+    /// - Parameters:
+    ///   - encodable: Request payload encoded as JSON.
+    ///   - relativePath: Path appended to the base URL. Pass `nil` to target the base URL without additional path components.
+    ///   - type: The expected response type used for generic inference.
+    ///   - options: Per-call overrides such as headers, query parameters, timeouts, or expected status codes.
+    /// - Returns: Tuple containing the decoded response (only returned for `200 OK`) and the response status code.
     public func patch<E: Encodable, D: Decodable & Sendable>(_ encodable: E, at relativePath: String?, responseType type: D.Type, options: RestOptions = RestOptions()) async throws -> (D?, HTTPStatusCode)  {
         let payload = try JSONEncoder().encode(encodable)
         let decodableDeserializer = DecodableDeserializer<D>()
@@ -462,14 +466,19 @@ open class RestApiCaller : NSObject {
 
 extension RestApiCaller {
     
+    /// Returns every cookie currently tracked by the caller.
     public func httpCookies() -> [HTTPCookie] {
         return httpCookieStorage?.cookies ?? []
     }
     
+    /// Removes all cookies from the underlying storage.
     public func deleteAllCookies() {
         self.httpCookieStorage?.removeCookies(since: Date())
     }
     
+    /// Returns cookies that match the supplied URL.
+    /// - Parameter url: URL used to scope the lookup.
+    /// - Returns: Cookies for the given URL, or `nil` if no cookie storage is configured.
     public func httpCookies(for url: URL) -> [HTTPCookie]? {
         self.httpCookieStorage?.cookies(for: url)
     }

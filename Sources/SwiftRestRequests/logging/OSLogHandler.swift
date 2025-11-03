@@ -28,21 +28,25 @@ import struct Logging.Logger
 
 import os
 
+/// `swift-log` handler that forwards messages to Apple's `os_log`.
 public struct OSLogHandler: LogHandler {
     public var logLevel: Logger.Level = .info
     public let label: String
     private let oslogger: OSLog
     
+    /// Creates a new handler that builds an `OSLog` from the provided label.
     public init(label: String) {
         self.label = label
         self.oslogger = OSLog(subsystem: label, category: "")
     }
 
+    /// Creates a new handler backed by an existing `OSLog`.
     public init(label: String, log: OSLog) {
         self.label = label
         self.oslogger = log
     }
     
+    /// Writes the log event to `os_log`.
     public func log(level: Logger.Level, message: Logger.Message, metadata: Logger.Metadata?, source: String, file: String, function: String, line: UInt) {
         var combinedPrettyMetadata = self.prettyMetadata
         if let metadataOverride = metadata, !metadataOverride.isEmpty {
@@ -61,6 +65,8 @@ public struct OSLogHandler: LogHandler {
     }
     
     private var prettyMetadata: String?
+    
+    /// Metadata associated with the logger, automatically flattened into key/value pairs.
     public var metadata = Logger.Metadata() {
         didSet {
             self.prettyMetadata = self.prettify(self.metadata)
@@ -90,6 +96,7 @@ public struct OSLogHandler: LogHandler {
 }
 
 extension OSLogType {
+    /// Maps `swift-log` levels to the closest `OSLogType`.
     static func from(loggerLevel: Logger.Level) -> Self {
         switch loggerLevel {
         case .trace:

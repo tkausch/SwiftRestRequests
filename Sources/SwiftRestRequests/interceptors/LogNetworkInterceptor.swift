@@ -28,6 +28,7 @@ import FoundationNetworking
 
 import Logging
 
+/// Interceptor that logs outgoing requests and incoming responses using `swift-log`.
 open class LogNetworkInterceptor: URLRequestInterceptor {
     
     static let noBody =  "none"
@@ -36,6 +37,8 @@ open class LogNetworkInterceptor: URLRequestInterceptor {
     let enableNetworkTracing: Bool
     
     
+    /// Creates a new interceptor.
+    /// - Parameter enableNetworkTracing: When `true`, headers, cookies, and bodies are pretty-printed; otherwise only method/URL pairs are logged.
     public init(enableNetworkTracing: Bool) {
         self.enableNetworkTracing = enableNetworkTracing
     }
@@ -46,6 +49,7 @@ open class LogNetworkInterceptor: URLRequestInterceptor {
         }
     }
     
+    /// Logs request metadata before the request is executed.
     public func invokeRequest(request: inout URLRequest, for session: URLSession) {
         
         guard let requestHeaders = request.allHTTPHeaderFields,
@@ -73,6 +77,7 @@ open class LogNetworkInterceptor: URLRequestInterceptor {
        
     }
     
+    /// Logs response metadata once the request finishes.
     public func receiveResponse(data:  Data, response: HTTPURLResponse, for session: URLSession) {
 
         guard let headerData = try? JSONSerialization.data(withJSONObject:  response.allHeaderFields, options: .prettyPrinted),
@@ -98,6 +103,7 @@ open class LogNetworkInterceptor: URLRequestInterceptor {
 }
 
 extension Data {
+    /// Pretty-prints the data when it represents JSON; falls back to `debugDescription` otherwise.
     var prettyPrintedJSONString: String? { /// NSString gives us a nice sanitized debugDescription
         
         guard self.count > 0 else {
@@ -112,6 +118,5 @@ extension Data {
         return prettyPrintedString
     }
 }
-
 
 

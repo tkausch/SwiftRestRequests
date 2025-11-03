@@ -27,18 +27,21 @@
 
 import Logging
 
-/// Use this URLSession delegate to implement public key server  pinning.
-/// Note: You  need to assign this object as  delegate for the `URLSession` object.
+/// URLSession delegate enforcing TLS pinning based on server public keys.
+/// Note: Assign an instance as the delegate of the `URLSession` you use for requests.
 public final class PublicKeyServerPinning: NSObject,  URLSessionDelegate {
     
     let pinnedPublicKeys: [SecKey]
     
     let logger = Logger.SwiftRestRequests.security
     
+    /// Creates a new pinning delegate.
+    /// - Parameter pinnedPublicKeys: Collection of allowed server public keys.
     public init(pinnedPublicKeys: [SecKey]) {
         self.pinnedPublicKeys = pinnedPublicKeys
     }
     
+    /// Validates the server certificate's public key against the pinned keys.
     public func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
         
         guard let serverTrust = challenge.protectionSpace.serverTrust else {
@@ -66,4 +69,3 @@ public final class PublicKeyServerPinning: NSObject,  URLSessionDelegate {
     
 }
 #endif
-
