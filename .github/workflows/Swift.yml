@@ -1,7 +1,7 @@
 # This workflow will build a Swift project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-swift
 
-name: Swift
+name: iOS Library CI
 
 on:
   push:
@@ -11,20 +11,32 @@ on:
 
 jobs:
   build:
-    name: Swift ${{ matrix.swift }} on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [macos-latest]
-        swift: ["5.9"]
+    runs-on: macos-latest
+
     steps:
-      - uses: swift-actions/setup-swift@v2
-        with:
-          swift-version: ${{ matrix.swift }}
-      - name: Get swift version
-        run: swift --version
       - uses: actions/checkout@v4
-      - name: Build
-        run: swift build -v
-      - name: Run tests
-        run: swift test -v
+
+      - name: Select Xcode 16.4
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app
+
+      - name: Show SDKs (debug)
+        run: xcodebuild -showsdks
+
+      # Replace "SwiftRestRequests" with your actual package or scheme name
+      - name: Build for iOS Simulator
+        run: |
+          xcodebuild \
+            -scheme SwiftRestRequests \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Debug \
+            clean build
+
+      - name: Run tests on iPhone simulator
+        run: |
+          xcodebuild \
+            -scheme SwiftRestRequests \
+            -sdk iphonesimulator \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -configuration Debug \
+            test
