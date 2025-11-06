@@ -73,8 +73,10 @@ open class RestApiCaller : NSObject {
     /// Cookie storage used by the session (if provided).
     let httpCookieStorage: HTTPCookieStorage?
     
-    /// Registered request/response interceptors.
-    var interceptors:  [URLRequestInterceptor]?
+    private let interceptorLock = NSLock()
+    
+    /// Registered request/response interceptors (empty by default).
+    var interceptors: [URLRequestInterceptor] = []
     
     /// Closure used to generate dynamic headers prior to each request.
     public let headerGenerator: HeaderGenerator?
@@ -150,19 +152,15 @@ open class RestApiCaller : NSObject {
     
     @inline(__always)
     private func callInvokeInterceptors(_ request: inout URLRequest) {
-        if let interceptors {
-            for interceptor in interceptors {
-                interceptor.invokeRequest(request: &request, for: session)
-            }
+        for interceptor in interceptors {
+            interceptor.invokeRequest(request: &request, for: session)
         }
     }
     @inline(__always)
     private func callReceiveInterceptors(_ data: Data, _ response: HTTPURLResponse) {
-        if let interceptors {
-            // we revers interceptor chain when receiving...
-            for interceptor in interceptors.reversed() {
-                interceptor.receiveResponse(data: data, response: response, for: session)
-            }
+        // reverse the order for response handling so the most recently added interceptor observes the response first
+        for interceptor in interceptors.reversed() {
+            interceptor.receiveResponse(data: data, response: response, for: session)
         }
     }
     
@@ -343,10 +341,11 @@ open class RestApiCaller : NSObject {
     /// - Parameter interceptor: Interceptor appended to the invocation chain.
     public func registerRequestInterceptor(_ interceptor: URLRequestInterceptor) {
         logger.info("Registering request interceptor: \(interceptor)")
-        if  self.interceptors == nil {
-            self.interceptors = [URLRequestInterceptor]()
-        }
-        interceptors!.append(interceptor)
+        
+        interceptorLock.lock()
+        defer { interceptorLock.unlock() }
+        
+        interceptors.append(interceptor)
     }
     
     /// Executes an asynchronous `GET` request and decodes the JSON response.
