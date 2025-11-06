@@ -49,7 +49,7 @@ public enum RestError: Error {
     ///   - HTTPURLResponse: The HTTPURLResponse from the server.
     ///   - Data: The raw returned data from the server.
     ///   - Error: The original system error (like a `DecodingError`) that triggered the failure.
-    case malformedResponse(HTTPURLResponse, Data, Error)
+    case malformedResponse(HTTPURLResponse, Data, any Error)
     
     /// Indicates the API call failed and optionally surfaces the parsed error payload.
     /// - Parameters:

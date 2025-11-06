@@ -19,7 +19,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import Foundation
+@preconcurrency import Foundation
 #if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
@@ -33,14 +33,14 @@ import Logging
 ///
 /// The generated headers are merged with the headers specified per call. Keys returned by the closure override
 /// existing values, making it convenient to inject authentication or device metadata that changes at runtime.
-public typealias HeaderGenerator = (URL) -> [String : String]?
+public typealias HeaderGenerator = @Sendable (URL) -> [String : String]?
 
 /// Abstraction for intercepting outgoing requests and incoming responses.
 ///
 /// Interceptors can mutate the `URLRequest` before it is sent or observe the `HTTPURLResponse` and payload
 /// after it is received. Register interceptors on `RestApiCaller` to build cross-cutting features such as
 /// logging, analytics, or header injection.
-public protocol URLRequestInterceptor: AnyObject {
+@preconcurrency public protocol URLRequestInterceptor: AnyObject {
     /// Called immediately before the request is executed. Mutate `request` in place to apply changes.
     func invokeRequest(request: inout URLRequest, for session: URLSession);
     /// Called after the response has been received. The default implementation does nothing.
@@ -74,13 +74,13 @@ open class RestApiCaller : NSObject {
     let httpCookieStorage: HTTPCookieStorage?
     
     /// Registered request/response interceptors.
-    var interceptors:  [URLRequestInterceptor]?
+    var interceptors:  [any URLRequestInterceptor]?
     
     /// Closure used to generate dynamic headers prior to each request.
     public let headerGenerator: HeaderGenerator?
     
     /// Authorizer that can mutate requests with authentication information.
-    public let authorizer: URLRequestAuthorizer?
+    public let authorizer: (any URLRequestAuthorizer)?
 
 // MARK: Lifecycle
     
@@ -96,7 +96,7 @@ open class RestApiCaller : NSObject {
     ///   - httpCookieStorage: Optional cookie storage injected into the session configuration.
     public convenience init(baseUrl: URL, sessionConfig:  
                             URLSessionConfiguration = URLSessionConfiguration.default,
-                            authorizer: URLRequestAuthorizer? = nil,
+                            authorizer: (any URLRequestAuthorizer)? = nil,
                             errorDeserializer: (any Deserializer)? = nil,
                             headerGenerator: HeaderGenerator? = nil,
                             enableNetworkTrace: Bool = false,
@@ -121,7 +121,7 @@ open class RestApiCaller : NSObject {
     ///   - headerGenerator: Closure producing dynamic headers per request.
     ///   - enableNetworkTrace: Enables network tracing through `LogNetworkInterceptor` (non-Linux platforms).
     ///   - httpCookieStorage: Cookie storage associated with the session.
-    public init(baseUrl: URL, urlSession: URLSession, authorizer: URLRequestAuthorizer?, errorDeserializer: (any Deserializer)?, headerGenerator: HeaderGenerator?, enableNetworkTrace: Bool, httpCookieStorage: HTTPCookieStorage?) {
+    public init(baseUrl: URL, urlSession: URLSession, authorizer: (any URLRequestAuthorizer)?, errorDeserializer: (any Deserializer)?, headerGenerator: HeaderGenerator?, enableNetworkTrace: Bool, httpCookieStorage: HTTPCookieStorage?) {
         self.baseUrl = baseUrl
         self.errorDeserializer = errorDeserializer
         self.session = urlSession
@@ -344,10 +344,10 @@ open class RestApiCaller : NSObject {
     /// Registers a request interceptor to observe or mutate network traffic.
     /// Interceptors run in the order they are registered and share the caller's `URLSession` instance.
     /// - Parameter interceptor: Interceptor appended to the invocation chain.
-    public func registerRequestInterceptor(_ interceptor: URLRequestInterceptor) {
+    public func registerRequestInterceptor(_ interceptor: any URLRequestInterceptor) {
         logger.info("Registering request interceptor: \(interceptor)")
         if  self.interceptors == nil {
-            self.interceptors = [URLRequestInterceptor]()
+            self.interceptors = [any URLRequestInterceptor]()
         }
         interceptors!.append(interceptor)
     }

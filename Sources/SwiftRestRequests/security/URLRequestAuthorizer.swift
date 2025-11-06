@@ -20,7 +20,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-import Foundation
+@preconcurrency import Foundation
 import Logging
 
 #if canImport(FoundationNetworking)
@@ -30,7 +30,7 @@ import FoundationNetworking
 
 
 /// Protocol adopted by components that can apply authentication headers to requests.
-public protocol URLRequestAuthorizer {
+@preconcurrency public protocol URLRequestAuthorizer {
     /// Updates the request with the appropriate authorization header.
     func configureAuthorizationHeader(for urlRequest: inout URLRequest);
 }

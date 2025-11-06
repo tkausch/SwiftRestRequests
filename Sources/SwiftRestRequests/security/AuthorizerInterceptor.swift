@@ -19,7 +19,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import Foundation
+@preconcurrency import Foundation
 #if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
@@ -29,9 +29,9 @@ import FoundationNetworking
 public class AuthorizerInterceptor: URLRequestInterceptor {
     
     /// Authorizer applied to each request.
-    public let authorizer: URLRequestAuthorizer
+    public let authorizer: any URLRequestAuthorizer
     
-    init(authorization: URLRequestAuthorizer) {
+    init(authorization: any URLRequestAuthorizer) {
         self.authorizer = authorization
     }
     
