@@ -29,11 +29,10 @@ extension Logger {
     /// Logger namespace providing shared instances for the package.
     public actor SwiftRestRequests {
         /// Logger used by request/response interceptors.
-        public static var interceptor = Logger(label: labelPrefix + "Interceptor")
+        public nonisolated(unsafe) static var interceptor = Logger(label: labelPrefix + "Interceptor")
         /// Logger used by security-related components.
-        public static var security = Logger(label: labelPrefix + "Security")
+        public nonisolated(unsafe) static var security = Logger(label: labelPrefix + "Security")
         /// Logger used by the main `RestApiCaller`.
-        public static var apiCaller = Logger(label: labelPrefix + "ApiCaller")
+        public nonisolated(unsafe) static var apiCaller = Logger(label: labelPrefix + "ApiCaller")
     }
 }
-
