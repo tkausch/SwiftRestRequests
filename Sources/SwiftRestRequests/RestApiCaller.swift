@@ -72,9 +72,11 @@ open class RestApiCaller : NSObject {
     let errorDeserializer: (any Deserializer)?
     /// Cookie storage used by the session (if provided).
     let httpCookieStorage: HTTPCookieStorage?
+   
+    private let interceptorLock = NSLock()
     
-    /// Registered request/response interceptors.
-    var interceptors:  [any URLRequestInterceptor]?
+    /// Registered request/response interceptors (empty by default).
+    var interceptors: [URLRequestInterceptor] = []
     
     /// Closure used to generate dynamic headers prior to each request.
     public let headerGenerator: HeaderGenerator?
@@ -150,19 +152,15 @@ open class RestApiCaller : NSObject {
     
     @inline(__always)
     private func callInvokeInterceptors(_ request: inout URLRequest) {
-        if let interceptors {
-            for interceptor in interceptors {
-                interceptor.invokeRequest(request: &request, for: session)
-            }
+        for interceptor in interceptors {
+            interceptor.invokeRequest(request: &request, for: session)
         }
     }
     @inline(__always)
     private func callReceiveInterceptors(_ data: Data, _ response: HTTPURLResponse) {
-        if let interceptors {
-            // we revers interceptor chain when receiving...
-            for interceptor in interceptors.reversed() {
-                interceptor.receiveResponse(data: data, response: response, for: session)
-            }
+        // reverse the order for response handling so the most recently added interceptor observes the response first
+        for interceptor in interceptors.reversed() {
+            interceptor.receiveResponse(data: data, response: response, for: session)
         }
     }
     
@@ -279,10 +277,9 @@ open class RestApiCaller : NSObject {
         let httpStatus = httpResponse.status
         
         // For requests without deserialization and no error just return the status
-        if type(of: responseDeserializer) == VoidDeserializer.self || httpStatus == .noContent {
-            if httpStatus.type == .success {
-                return (nil, httpResponse.status)
-            }
+        if shouldBypassDeserialization(responseDeserializer, status: httpStatus),
+           httpStatus.type == .success {
+            return (nil, httpStatus)
         }
         
         guard !data.isEmpty  else {
@@ -291,52 +288,50 @@ open class RestApiCaller : NSObject {
         
         // Postcondition: We have a response object or  error that needs to be parsed!
         
-        let contentType =  httpResponse.value(forHTTPHeaderField: HTTPHeaderKeys.ContentType.rawValue)
-        
-        // Note: some servers return also encoding i.e. Content-Type: application/json; charset=utf-8 take the first part
-        let firstContentMimeType = contentType?.components(separatedBy: ";").first
-        
-        guard  let firstContentMimeType, let _ = MimeType(rawValue: firstContentMimeType) else {
-            throw RestError.invalidMimeType(contentType)
-        }
-        
-        // Postcondition: Response or error ContentTyp is supported
+        _ = try validatedMimeType(from: httpResponse)
         
         if httpStatus.type == .success  {
-            
-            // Postcondition: httpStatus in 200...299
-            if httpStatus == .ok {
-                // Postcondition: httpStatus is 200 we need to deserialize
-                do {
-                    let transformedResponse = try responseDeserializer.deserialize(data)
-                    return (transformedResponse, httpResponse.status)
-                } catch {
-                    throw RestError.malformedResponse(httpResponse, data, error)
-                }
-            } else {
-                // Postcondition: httpStatus is 201...299
-                // Note: we skipt data in this case
-                return (nil, httpStatus)
-            }
-            
-        } else {
-            
-            // Postcondition: httpStatus not 2XX. We have an error and error data
-            var failedRestCallError: RestError
-            
-            do {
-                let errorJson = try errorDeserializer?.deserialize(data)
-                failedRestCallError =  RestError.failedRestCall(httpResponse, httpStatus, error: errorJson)
-            } catch {
-                throw RestError.malformedResponse(httpResponse, data, error)
-            }
-            
-            throw failedRestCallError
-            
+            let transformedResponse = try decodeSuccessfulResponse(data: data, response: httpResponse, deserializer: responseDeserializer)
+            return (transformedResponse, httpStatus)
         }
-            
+
+        throw try buildErrorResponse(data: data, response: httpResponse, status: httpStatus)
     }
 
+    private func shouldBypassDeserialization<T: Deserializer>(_ deserializer: T, status: HTTPStatusCode) -> Bool {
+        (deserializer is VoidDeserializer) || status == .noContent
+    }
+
+    private func validatedMimeType(from response: HTTPURLResponse) throws -> MimeType {
+        let contentType = response.value(forHTTPHeaderField: HTTPHeaderKeys.ContentType.rawValue)
+        let firstContentMimeType = contentType?.components(separatedBy: ";").first
+        
+        guard let firstContentMimeType,
+              let mimeType = MimeType(rawValue: firstContentMimeType) else {
+            throw RestError.invalidMimeType(contentType)
+        }
+        return mimeType
+    }
+    
+    private func decodeSuccessfulResponse<T: Deserializer>(data: Data, response: HTTPURLResponse, deserializer: T) throws -> T.ResponseType? {
+        if response.status == .ok {
+            do {
+                return try deserializer.deserialize(data)
+            } catch {
+                throw RestError.malformedResponse(response, data, error)
+            }
+        }
+        return nil
+    }
+
+    private func buildErrorResponse(data: Data, response: HTTPURLResponse, status: HTTPStatusCode) throws -> RestError {
+        do {
+            let errorPayload = try errorDeserializer?.deserialize(data)
+            return RestError.failedRestCall(response, status, error: errorPayload)
+        } catch {
+            throw RestError.malformedResponse(response, data, error)
+        }
+    }
     
     
 // MARK: Public API that can be used from other classes or subclass
@@ -346,10 +341,11 @@ open class RestApiCaller : NSObject {
     /// - Parameter interceptor: Interceptor appended to the invocation chain.
     public func registerRequestInterceptor(_ interceptor: any URLRequestInterceptor) {
         logger.info("Registering request interceptor: \(interceptor)")
-        if  self.interceptors == nil {
-            self.interceptors = [any URLRequestInterceptor]()
-        }
-        interceptors!.append(interceptor)
+        
+        interceptorLock.lock()
+        defer { interceptorLock.unlock() }
+        
+        interceptors.append(interceptor)
     }
     
     /// Executes an asynchronous `GET` request and decodes the JSON response.
