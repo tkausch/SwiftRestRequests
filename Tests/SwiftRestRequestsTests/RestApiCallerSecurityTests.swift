@@ -38,7 +38,7 @@ final class RestApiCallerSecurityTests: AbstractRestApiCallerTests {
     
     override func setUp()  {
         super.setUp()
-        guard let url = URL(string: "https://httpbin.org") else {
+        guard let url = URL(string: "http://0.0.0.0:80") else {
             XCTFail("Bad test server URL!")
             return
         }
