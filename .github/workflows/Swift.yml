@@ -3,6 +3,8 @@
 
 name: iOS Library CI
 
+permissions:
+  contents: read
 name: Swift
 
 on:
