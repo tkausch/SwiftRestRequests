@@ -52,7 +52,7 @@ final class RestApiCallerSecurityTests: AbstractRestApiCallerTests {
             let token: String
         }
         
-        let authorizer = BearerReqeustAuthorizer(token: BearerToken)
+        let authorizer = BearerRequestAuthorizer(token: BearerToken)
         let caller = RestApiCaller(baseUrl: url, authorizer: authorizer, enableNetworkTrace: true)
         
         var (response, httpStatus) = try await caller.get(HttpBinBearerResponse.self, at: "bearer")

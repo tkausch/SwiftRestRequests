@@ -1,5 +1,5 @@
 //
-// Deserializer.swift
+// TrustValidation.swift
 //
 // This File belongs to SwiftRestRequests
 // Copyright © 2024 Thomas Kausch.
@@ -19,24 +19,19 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-
 @preconcurrency import Foundation
 #if canImport(FoundationNetworking)
 import FoundationNetworking
-
-extension URLSession {
-  /// Async/await wrapper around `dataTask` for Linux FoundationNetworking.
-  func data(for request: URLRequest) async throws -> (Data, URLResponse) {
-    return try await withCheckedThrowingContinuation { continuation in
-      let task = self.dataTask(with: request) { (data, response, error) in
-        guard let data = data, let response = response else {
-          let error = error ?? URLError(.badServerResponse)
-          return continuation.resume(throwing: error)
-        }
-        continuation.resume(returning: (data, response))
-      }
-      task.resume()
-    }
-  }
-}
 #endif
+
+import Logging
+
+enum TrustValidation {
+    static func extractServerTrust(from challenge: URLAuthenticationChallenge, logger: Logger) -> SecTrust? {
+        guard let serverTrust = challenge.protectionSpace.serverTrust else {
+            logger.error("Security: serverTrust is missing; cancelling authentication challenge.")
+            return nil
+        }
+        return serverTrust
+    }
+}

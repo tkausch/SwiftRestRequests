@@ -22,7 +22,7 @@
 import Foundation
 
 /// Deserializes raw network data into strongly typed Swift values.
-public protocol Deserializer {
+public protocol Deserializer: Sendable {
 
     associatedtype ResponseType: Sendable
 
@@ -40,7 +40,7 @@ public protocol Deserializer {
 
 
 /// A generic deserializer that uses `JSONDecoder` to decode a `Decodable` value.
-public final class DecodableDeserializer<T: Decodable & Sendable>: Deserializer {
+public struct DecodableDeserializer<T: Decodable & Sendable>: Deserializer {
 
     public typealias ResponseType = T
 
@@ -55,7 +55,7 @@ public final class DecodableDeserializer<T: Decodable & Sendable>: Deserializer 
 
 
 /// A deserializer representing empty responses (`Void`).
-public final class VoidDeserializer: Deserializer {
+public struct VoidDeserializer: Deserializer {
 
     public typealias ResponseType = Void
 
@@ -65,19 +65,19 @@ public final class VoidDeserializer: Deserializer {
     
     public func deserialize(_ data: Data) throws -> Void {
         assert(data.isEmpty) // no data should be returned
-        return Void()
+        return ()
     }
 }
 
 
 /// A deserializer that emits the raw payload `Data`.
-public final class DataDeserializer: Deserializer {
+public struct DataDeserializer: Deserializer {
 
     public typealias ResponseType = Data
 
     public let acceptHeader = MimeType.ApplicationOctetStream.rawValue
 
-    public required init() { }
+    public init() { }
 
     public func deserialize(_ data: Data) throws -> Data {
         return data

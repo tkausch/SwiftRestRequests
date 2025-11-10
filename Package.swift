@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.0
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -24,12 +24,16 @@ let package = Package(
             name: "SwiftRestRequests",
             dependencies: [.product(name: "Logging", package: "swift-log")],
             swiftSettings: [
-                .enableUpcomingFeature("StrictConcurrency")
-                // .swiftLanguageMode(.v6)
+                .swiftLanguageMode(.v6),
+                .enableUpcomingFeature("ExistentialAny")
             ]
         ),
         .testTarget(
             name: "SwiftRestRequestsTests",
-            dependencies: ["SwiftRestRequests"]),
+            dependencies: ["SwiftRestRequests"],
+            swiftSettings: [
+                .swiftLanguageMode(.v6)
+            ]
+        ),
     ]
 )

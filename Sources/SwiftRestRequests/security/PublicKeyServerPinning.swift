@@ -44,27 +44,22 @@ public final class PublicKeyServerPinning: NSObject,  URLSessionDelegate {
     /// Validates the server certificate's public key against the pinned keys.
     public func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
         
-        guard let serverTrust = challenge.protectionSpace.serverTrust else {
-            logger.error("Could not get serverTrust. Will cancel authentication!!")
-            return(.cancelAuthenticationChallenge, nil)
-        }
-        
-        // Extract the server's public key
-        if let serverPublicKey = SecTrustCopyKey(serverTrust) {
-            // Compare the server's public key with the pinned public key
-            if pinnedPublicKeys.contains(where: { publicKey in
-                publicKey == serverPublicKey
-            }) {
-                logger.info("Trust evaluation was successful. The public key is known (pinned).")
-                return (.useCredential, URLCredential(trust: serverTrust))
-            } else {
-                logger.error("Trust evaluation failed. The public key is unkown therefore cancel request!!!")
-                return (.cancelAuthenticationChallenge, nil)
-            }
-        } else {
-            logger.error("Trust evaluation failed. No public key found on server. Cancel request!")
+        guard let serverTrust = TrustValidation.extractServerTrust(from: challenge, logger: logger) else {
             return (.cancelAuthenticationChallenge, nil)
         }
+        
+        guard let serverPublicKey = SecTrustCopyKey(serverTrust) else {
+            logger.error("Security: public key pinning failed - no key present in server trust.")
+            return (.cancelAuthenticationChallenge, nil)
+        }
+        
+        guard pinnedPublicKeys.contains(where: { $0 == serverPublicKey }) else {
+            logger.error("Security: public key pinning failed - key not found in pinned set.")
+            return (.cancelAuthenticationChallenge, nil)
+        }
+        
+        logger.info("Security: public key pinning succeeded.")
+        return (.useCredential, URLCredential(trust: serverTrust))
     }
     
 }
