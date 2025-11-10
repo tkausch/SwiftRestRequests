@@ -63,7 +63,7 @@ public class BasicRequestAuthorizer: URLRequestAuthorizer {
     public func configureAuthorizationHeader(for urlRequest: inout URLRequest) {
         logger.trace("Set HTTP Authorization header",  metadata: [
             "urlRequest": "\(String(describing: urlRequest.url?.absoluteString))",
-            "Authorization": "\(headerValue)"])
+            "Authorization": "****"])
         urlRequest.setValue(self.headerValue, forHTTPHeaderField: "Authorization")
     }
 }
