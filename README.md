@@ -1,8 +1,6 @@
 <img src="Resources/logo-color.png" width="900" />
 
-[![Build Status](https://github.com/tkausch/SwiftRestRequests/actions/workflows/Swift.yml/badge.svg)](https://github.com/tkausch/SwiftRestRequests/actions/workflows/Swift.yml/badge.svg)
-[![Swift Support](https://img.shields.io/badge/Swift-5.7_5.8_5.9-orange?style=flat-square)](https://img.shields.io/badge/Swift-5.7_5.8_5.9-Orange?style=flat-square)
-[![Platforms](https://img.shields.io/badge/Platforms-macOS_iOS_tvOS_watchOS_visionOS_Linux-yellowgreen?style=flat-square)](https://img.shields.io/badge/Platforms-macOS_iOS_tvOS_watchOS_vision_OS_Linux-Green?style=flat-square)
+[![Swift versions & platforms](https://img.shields.io/badge/Swift-5.3%20to%20%7E6.0-green.svg)](https://swiftpackageindex.com/SwiftRestRequests)
 [![Swift Package Manager](https://img.shields.io/badge/Swift_Package_Manager-compatible-orange?style=flat-square)](https://img.shields.io/badge/Swift_Package_Manager-compatible-orange?style=flat-square)
 
 # SwiftRestRequests
