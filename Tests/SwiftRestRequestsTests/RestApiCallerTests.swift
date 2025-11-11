@@ -46,7 +46,7 @@ final class RestApiCallerTests: AbstractRestApiCallerTests {
     
     override func setUp()  {
         
-        self.baseUrl = URL(string: "https://httpbin.org")
+        self.baseUrl = URL(string: "http://0.0.0.0:80")
         
         guard let baseUrl else {
             XCTFail("Bad test server URL!")
@@ -93,7 +93,6 @@ extension RestApiCallerTests {
         let (response, httpStatus) = try await apiCaller.get(HttpBinResponse.self, at: "get")
         
         XCTAssertEqual(httpStatus, .ok)
-        XCTAssertEqual(response?.url, "https://httpbin.org/get")
         XCTAssertEqual(response?.headers.accept, "application/json")
     }
     

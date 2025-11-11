@@ -115,6 +115,8 @@ public enum RestError: Error {
     /// - Malformed JSON or other formats
     ///
     /// - Parameters:
+
+  
     ///   - HTTPURLResponse: The HTTP response metadata from the server.
     ///   - Data: The raw response data that failed to deserialize.
     ///   - Error: The underlying error (typically a `DecodingError`) that provides
@@ -123,6 +125,7 @@ public enum RestError: Error {
     /// - Note: Inspect the underlying Error for detailed information about the deserialization failure.
     ///         For DecodingError cases, the error will contain the specific path where decoding failed.
     case malformedResponse(HTTPURLResponse, Data, Error)
+   
     
     /// Indicates the API call failed with an error response from the server.
     ///

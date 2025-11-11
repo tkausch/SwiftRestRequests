@@ -38,7 +38,7 @@ final class RestApiCallerSecurityTests: AbstractRestApiCallerTests {
     
     override func setUp()  {
         super.setUp()
-        guard let url = URL(string: "https://httpbin.org") else {
+        guard let url = URL(string: "http://0.0.0.0:80") else {
             XCTFail("Bad test server URL!")
             return
         }
@@ -52,7 +52,7 @@ final class RestApiCallerSecurityTests: AbstractRestApiCallerTests {
             let token: String
         }
         
-        let authorizer = BearerReqeustAuthorizer(token: BearerToken)
+        let authorizer = BearerRequestAuthorizer(token: BearerToken)
         let caller = RestApiCaller(baseUrl: url, authorizer: authorizer, enableNetworkTrace: true)
         
         var (response, httpStatus) = try await caller.get(HttpBinBearerResponse.self, at: "bearer")

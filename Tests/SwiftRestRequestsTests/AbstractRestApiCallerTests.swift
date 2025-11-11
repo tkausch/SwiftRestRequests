@@ -4,6 +4,7 @@
 // All Rights Reserved.
 
 import XCTest
+import Foundation
 @testable import SwiftRestRequests
 
 
@@ -12,11 +13,17 @@ import Logging
 
 class AbstractRestApiCallerTests: XCTestCase {
 
-    // When available we prefere to use the OSLog
-    static var onceExecution: () = {
+    private static let loggingLock = NSLock()
+
+    override class func setUp() {
+        super.setUp()
+
+        // Synchronize access to global logger state
+        loggingLock.lock()
+        defer { loggingLock.unlock() }
         
         #if os(Linux)
-           // Configure `swift-log`default logger
+            // Configure `swift-log` default logger
         #else
             /// Configure `swift-log` logging system to use OSLog backend
             LoggingSystem.bootstrap(OSLogHandler.init)
@@ -25,14 +32,6 @@ class AbstractRestApiCallerTests: XCTestCase {
         Logger.SwiftRestRequests.security.logLevel = .trace
         Logger.SwiftRestRequests.interceptor.logLevel = .trace
         Logger.SwiftRestRequests.apiCaller.logLevel = .trace
-        
-    }()
-    
-    
-    override func setUp()  {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-        let _ = AbstractRestApiCallerTests.onceExecution
-        
-    }
 
+    }
 }

@@ -47,8 +47,7 @@ public final class CertificateCAPinning: NSObject, URLSessionDelegate {
     /// Validates the server trust against the pinned CA certificates.
     public func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge) async -> (URLSession.AuthChallengeDisposition, URLCredential?) {
         
-        guard let serverTrust = challenge.protectionSpace.serverTrust else {
-            logger.error("Could not get serverTrust. Will cancel authentication!!!")
+        guard let serverTrust = TrustValidation.extractServerTrust(from: challenge, logger: logger) else {
             return (.cancelAuthenticationChallenge, nil)
         }
         
@@ -60,13 +59,13 @@ public final class CertificateCAPinning: NSObject, URLSessionDelegate {
         var error: CFError? = nil
         let status = SecTrustEvaluateWithError(serverTrust, &error)
         
-        if error == nil && status {
-            logger.info("ServerTrust evaluation was successful - will proceed request...")
-            return (.useCredential, URLCredential(trust: serverTrust))
-        } else {
-            logger.error("ServerTrustevaluation evaluation failed - will cancel the HTTP request!!!")
+        guard error == nil, status else {
+            logger.error("Security: CA pinning failed - rejecting connection.")
             return (.cancelAuthenticationChallenge, nil)
         }
+        
+        logger.info("Security: CA pinning succeeded.")
+        return (.useCredential, URLCredential(trust: serverTrust))
         
     }
     
