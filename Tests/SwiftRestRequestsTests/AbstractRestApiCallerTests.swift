@@ -18,6 +18,11 @@ class AbstractRestApiCallerTests: XCTestCase {
     override class func setUp() {
         super.setUp()
 
+        // ***********************************************************
+        // IMPORTANT NOTE: You must run httpbin locally for testing!!!
+        // docker run -p 80:80 kennethreitz/httpbin
+        // ************************************************************
+        
         // Synchronize access to global logger state
         loggingLock.lock()
         defer { loggingLock.unlock() }
@@ -26,7 +31,7 @@ class AbstractRestApiCallerTests: XCTestCase {
             // Configure `swift-log` default logger
         #else
             /// Configure `swift-log` logging system to use OSLog backend
-            LoggingSystem.bootstrap(OSLogHandler.init)
+            // LoggingSystem.bootstrap(OSLogHandler.init)
         #endif
         
         Logger.SwiftRestRequests.security.logLevel = .trace
