@@ -203,7 +203,7 @@ open class RestApiCaller : NSObject {
     @inline(__always)
     private func validateResponseStatusCodes(_ expectedStatusCodes: [HTTPStatusCode]?, _ httpResponse: HTTPURLResponse) throws {
         if let expectedStatusCodes, !expectedStatusCodes.contains(httpResponse.status) {
-            throw RestError.unexpectedHttpStatusCode(httpResponse.statusCode)
+            throw RestError.unexpectedHttpStatusCode(statusCode: httpResponse.statusCode)
         }
     }
     
@@ -251,7 +251,7 @@ open class RestApiCaller : NSObject {
         
         // check http response has a supported type
         guard let httpResponse = response as? HTTPURLResponse else {
-            throw RestError.badResponse(response, data)
+            throw RestError.badResponse(response: response, data: data)
         }
         
         callReceiveInterceptors(data, httpResponse)
@@ -283,7 +283,7 @@ open class RestApiCaller : NSObject {
         }
         
         guard !data.isEmpty  else {
-            throw RestError.failedRestCall(httpResponse, httpStatus, error: nil)
+            throw RestError.failedRestCall(response: httpResponse, status: httpStatus, errorPayload: nil)
         }
         
         // Postcondition: We have a response object or  error that needs to be parsed!
@@ -308,7 +308,7 @@ open class RestApiCaller : NSObject {
         
         guard let firstContentMimeType,
               let mimeType = MimeType(rawValue: firstContentMimeType) else {
-            throw RestError.invalidMimeType(contentType)
+            throw RestError.invalidMimeType(mimeType: contentType)
         }
         return mimeType
     }
@@ -318,7 +318,7 @@ open class RestApiCaller : NSObject {
             do {
                 return try deserializer.deserialize(data)
             } catch {
-                throw RestError.malformedResponse(response, data, error)
+                throw RestError.malformedResponse(response: response, data: data, underlying: error)
             }
         }
         return nil
@@ -327,9 +327,9 @@ open class RestApiCaller : NSObject {
     private func buildErrorResponse(data: Data, response: HTTPURLResponse, status: HTTPStatusCode) throws -> RestError {
         do {
             let errorPayload = try errorDeserializer?.deserialize(data)
-            return RestError.failedRestCall(response, status, error: errorPayload)
+            return RestError.failedRestCall(response: response, status: status, errorPayload: errorPayload)
         } catch {
-            throw RestError.malformedResponse(response, data, error)
+            throw RestError.malformedResponse(response: response, data: data, underlying: error)
         }
     }
     
