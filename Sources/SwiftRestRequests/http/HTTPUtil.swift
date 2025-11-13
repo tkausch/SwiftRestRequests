@@ -33,7 +33,7 @@ internal enum HTTPMethod: String {
 }
 
 /// MIME types referenced throughout the client.
-internal enum MimeType: String {
+internal enum MimeType: String, CaseIterable {
     case ApplicationJson =  "application/json"
     case TextPlain = "text/plain"
     case ApplicationOctetStream = "application/octet-stream"
