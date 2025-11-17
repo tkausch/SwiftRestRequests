@@ -29,7 +29,7 @@ import FoundationNetworking
 import Logging
 
 /// Interceptor that logs outgoing requests and incoming responses using `swift-log`.
-open class LogNetworkInterceptor: URLRequestInterceptor {
+open class LogNetworkInterceptor: URLRequestInterceptor, @unchecked Sendable {
     
     static let noBody =  "none"
     

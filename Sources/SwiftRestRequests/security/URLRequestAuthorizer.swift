@@ -30,13 +30,13 @@ import FoundationNetworking
 
 
 /// Protocol adopted by components that can apply authentication headers to requests.
-@preconcurrency public protocol URLRequestAuthorizer {
+public protocol URLRequestAuthorizer: Sendable {
     /// Updates the request with the appropriate authorization header.
     func configureAuthorizationHeader(for urlRequest: inout URLRequest);
 }
 
 /// Configures `Authorization` headers for HTTP Basic authentication.
-public class BasicRequestAuthorizer: URLRequestAuthorizer {
+public final class BasicRequestAuthorizer: URLRequestAuthorizer {
     
     let logger: Logger
     
@@ -71,12 +71,12 @@ public class BasicRequestAuthorizer: URLRequestAuthorizer {
 }
 
 /// Configures `Authorization` headers for Bearer token authentication.
-public class BearerRequestAuthorizer: URLRequestAuthorizer {
+public final class BearerRequestAuthorizer: URLRequestAuthorizer {
     
     let logger: Logger
     
     // The token value (without `Bearer` prefix) to be used for the HTTP `Authorization` request header.
-    public var token: String
+    public let token: String
     
     /// Creates a Bearer authorization helper with the provided token.
     /// - Parameters:
@@ -97,7 +97,7 @@ public class BearerRequestAuthorizer: URLRequestAuthorizer {
 
 
 /// No-op authorizer used when requests must remain unauthenticated.
-public class NoneAuthorizer: URLRequestAuthorizer {
+public final class NoneAuthorizer: URLRequestAuthorizer {
     
     public init() {}
     

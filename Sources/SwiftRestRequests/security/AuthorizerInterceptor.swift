@@ -26,7 +26,7 @@ import FoundationNetworking
 
 
 /// Interceptor that injects authorization headers using a `URLRequestAuthorizer`.
-public class AuthorizerInterceptor: URLRequestInterceptor {
+public final class AuthorizerInterceptor: URLRequestInterceptor {
     
     /// Authorizer applied to each request.
     public let authorizer: any URLRequestAuthorizer

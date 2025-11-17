@@ -40,7 +40,7 @@ public typealias HeaderGenerator = @Sendable (URL) -> [String : String]?
 /// Interceptors can mutate the `URLRequest` before it is sent or observe the `HTTPURLResponse` and payload
 /// after it is received. Register interceptors on `RestApiCaller` to build cross-cutting features such as
 /// logging, analytics, or header injection.
-@preconcurrency public protocol URLRequestInterceptor: AnyObject {
+public protocol URLRequestInterceptor: AnyObject, Sendable {
     /// Called immediately before the request is executed. Mutate `request` in place to apply changes.
     func invokeRequest(request: inout URLRequest, for session: URLSession);
     /// Called after the response has been received. The default implementation does nothing.
