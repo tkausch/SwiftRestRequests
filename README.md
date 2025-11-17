@@ -2,6 +2,7 @@
 
 [![Swift versions & platforms](https://img.shields.io/badge/Swift-5.3%20to%20%7E6.0-green.svg)](https://swiftpackageindex.com/SwiftRestRequests)
 [![Swift Package Manager](https://img.shields.io/badge/Swift_Package_Manager-compatible-orange?style=flat-square)](https://img.shields.io/badge/Swift_Package_Manager-compatible-orange?style=flat-square)
+[![Documentation](https://img.shields.io/badge/Documentation-DocC-blue)](https://tkausch.github.io/SwiftRestRequests/documentation/swiftrestrequests/)
 
 # SwiftRestRequests
 
@@ -167,9 +168,29 @@ Implement custom interceptors to mutate requests or responses, e.g. to inject he
 - Register interceptors with `registerRequestInterceptor(_:)` on the `RestApiCaller` instance; they fire in the order they are added and share the same `URLSession`.
 - For TLS pinning helpers see `CertificateCAPinning` and `PublicKeyServerPinning` in `Sources/SwiftRestRequests/security`.
 
+## Documentation
+
+Comprehensive API documentation is available online:
+
+📚 **[View Full Documentation](https://tkausch.github.io/SwiftRestRequests/documentation/swiftrestrequests/)**
+
+The documentation includes:
+- Complete API reference with inline examples
+- Getting started guides
+- Advanced configuration options
+- Security best practices
+- Error handling patterns
+
+To build the documentation locally, run:
+```bash
+./scripts/build-docc.sh
+```
+
+See [DOCC_PUBLISHING.md](DOCC_PUBLISHING.md) for more details on building and publishing documentation.
+
 ## Need Help?
 
-Check the `Examples` directory (coming soon) or open a GitHub discussion with questions and ideas. Contributions are welcome—feel free to submit issues or pull requests!
+Check the [documentation](https://tkausch.github.io/SwiftRestRequests/documentation/swiftrestrequests/) or open a GitHub discussion with questions and ideas. Contributions are welcome—feel free to submit issues or pull requests!
 
 ## Contributing
 

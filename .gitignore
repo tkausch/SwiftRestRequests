@@ -36,3 +36,7 @@ Package.resolved
 # Carthage/Checkouts
 
 Carthage/Build/
+
+# DocC Documentation
+docs/
+.docc-build/
