@@ -35,25 +35,19 @@ struct HttpBinHeaders: Decodable {
 final class RestApiCallerTests: AbstractRestApiCallerTests {
     
     var apiCaller: RestApiCaller!
-    var baseUrl: URL!
+
     
     let testCookieName = "SwiftRestRequestTestCookie"
     let testCookieValue = UUID().uuidString
     
     private func readTestCookieFromStore() -> HTTPCookie? {
-        return apiCaller.httpCookies(for: baseUrl)?.filter{ $0.name == testCookieName }.first
+        return apiCaller.httpCookies(for: self.url)?.filter{ $0.name == testCookieName }.first
     }
     
     override func setUp()  {
+        super.setUp()
         
-        self.baseUrl = URL(string: "http://0.0.0.0:80")
-        
-        guard let baseUrl else {
-            XCTFail("Bad test server URL!")
-            return
-        }
-        
-        apiCaller = RestApiCaller(baseUrl: baseUrl, enableNetworkTrace: true, httpCookieStorage: HTTPCookieStorage.shared)
+        apiCaller = RestApiCaller(baseUrl: self.url, enableNetworkTrace: true, httpCookieStorage: HTTPCookieStorage.shared)
     }
     
     
@@ -263,7 +257,7 @@ extension RestApiCallerTests {
     }
     
     func getTestCookieFromStore() -> HTTPCookie? {
-        return apiCaller.httpCookies(for: baseUrl)?.filter{ $0.name == testCookieName }.first
+        return apiCaller.httpCookies(for: self.url)?.filter{ $0.name == testCookieName }.first
     }
     
     

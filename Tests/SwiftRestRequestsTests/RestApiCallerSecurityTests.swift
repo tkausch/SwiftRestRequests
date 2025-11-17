@@ -28,8 +28,6 @@ import XCTest
 
 final class RestApiCallerSecurityTests: AbstractRestApiCallerTests {
     
-    var url: URL!
-    
     let BearerToken = "ThisIsAVeryLongBearerToken"
     let BearerToken2 = "ThisIsAnotherVeryLongBearerToken"
     
@@ -38,11 +36,6 @@ final class RestApiCallerSecurityTests: AbstractRestApiCallerTests {
     
     override func setUp()  {
         super.setUp()
-        guard let url = URL(string: "http://0.0.0.0:80") else {
-            XCTFail("Bad test server URL!")
-            return
-        }
-        self.url = url
     }
     
     func testBearerAuthorization() async throws {

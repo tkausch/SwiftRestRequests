@@ -13,10 +13,19 @@ import Logging
 
 class AbstractRestApiCallerTests: XCTestCase {
 
+    var url: URL!
+
     private static let loggingLock = NSLock()
 
-    override class func setUp() {
-        super.setUp()
+    
+    override func setUp() {
+        super.setUp()       
+
+        guard let url = URL(string: "http://localhost:80") else {
+            XCTFail("Bad test server URL!")
+            return
+        }   
+        self.url = url
 
         // ***********************************************************
         // IMPORTANT NOTE: You must run httpbin locally for testing!!!
@@ -24,8 +33,8 @@ class AbstractRestApiCallerTests: XCTestCase {
         // ************************************************************
         
         // Synchronize access to global logger state
-        loggingLock.lock()
-        defer { loggingLock.unlock() }
+        Self.loggingLock.lock()
+        defer { Self.loggingLock.unlock() }
         
         Logger.SwiftRestRequests.security.logLevel = .trace
         Logger.SwiftRestRequests.interceptor.logLevel = .trace

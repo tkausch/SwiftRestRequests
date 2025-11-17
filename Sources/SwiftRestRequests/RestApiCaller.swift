@@ -76,7 +76,7 @@ open class RestApiCaller : NSObject {
     private let interceptorLock = NSLock()
     
     /// Registered request/response interceptors (empty by default).
-    var interceptors: [URLRequestInterceptor] = []
+    var interceptors: [any URLRequestInterceptor] = []
     
     /// Closure used to generate dynamic headers prior to each request.
     public let headerGenerator: HeaderGenerator?
