@@ -20,14 +20,19 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import Foundation
-#if canImport(FoundationNetworking)
-import FoundationNetworking
-#endif
-
 import Logging
+
+#if os(Linux)
+    // No Security framework on Linux
+#else
+
+import Security
+
 
 enum TrustValidation {
     static func extractServerTrust(from challenge: URLAuthenticationChallenge, logger: Logger) -> SecTrust? {
+
+
         guard let serverTrust = challenge.protectionSpace.serverTrust else {
             logger.error("Security: serverTrust is missing; cancelling authentication challenge.")
             return nil
@@ -35,3 +40,5 @@ enum TrustValidation {
         return serverTrust
     }
 }
+
+#endif

@@ -23,8 +23,9 @@ import XCTest
 @testable import SwiftRestRequests
 
 
-
-
+#if os(Linux) 
+    // No Security framework on Linux
+#else
 
 final class RestApiCallerSecurityTests: AbstractRestApiCallerTests {
     
@@ -70,8 +71,6 @@ final class RestApiCallerSecurityTests: AbstractRestApiCallerTests {
         
         
     }
-
-#if !os(Linux)
    
     func testBasicAuthorization() async throws {
         
@@ -91,6 +90,6 @@ final class RestApiCallerSecurityTests: AbstractRestApiCallerTests {
         XCTAssertEqual(response!.user, User)
     }
     
- #endif
-    
 }
+
+#endif
