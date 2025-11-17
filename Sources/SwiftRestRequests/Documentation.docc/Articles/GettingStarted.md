@@ -1,9 +1,5 @@
 # Getting Started
 
-@Metadata {
-    @Title("Getting Started")
-}
-
 Follow these steps to integrate ``SwiftRestRequests`` into a Swift Package or Xcode project and perform your
 first request.
 

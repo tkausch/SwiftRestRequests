@@ -119,15 +119,11 @@ let combined = RestOptions.combine(baseOptions, authOptions, customOptions)
 ## Topics
 
 ### Configuration
-- ``RestOptions/headers``
+- ``RestOptions/httpHeaders``
 - ``RestOptions/queryParameters``
-- ``RestOptions/timeoutInterval``
+- ``RestOptions/requestTimeoutSeconds``
 - ``RestOptions/expectedStatusCodes``
-- ``RestOptions/acceptedMimeTypes``
-
-### Security
-- ``RestOptions/serverPinning``
-- ``RestOptions/tlsConfiguration``
+- ``RestOptions/dateDecodingStrategy``
 
 ### Related Types
 - ``RestApiCaller``
