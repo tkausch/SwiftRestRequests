@@ -18,6 +18,11 @@ class AbstractRestApiCallerTests: XCTestCase {
     override class func setUp() {
         super.setUp()
 
+        // ***********************************************************
+        // IMPORTANT NOTE: You must run httpbin locally for testing!!!
+        // docker run -p 80:80 kennethreitz/httpbin
+        // ************************************************************
+        
         // Synchronize access to global logger state
         loggingLock.lock()
         defer { loggingLock.unlock() }

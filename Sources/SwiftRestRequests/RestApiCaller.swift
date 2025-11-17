@@ -203,7 +203,7 @@ open class RestApiCaller : NSObject {
     @inline(__always)
     private func validateResponseStatusCodes(_ expectedStatusCodes: [HTTPStatusCode]?, _ httpResponse: HTTPURLResponse) throws {
         if let expectedStatusCodes, !expectedStatusCodes.contains(httpResponse.status) {
-            throw RestError.unexpectedHttpStatusCode(httpResponse.statusCode)
+            throw RestError.unexpectedHttpStatusCode(statusCode: httpResponse.statusCode)
         }
     }
     
@@ -251,7 +251,7 @@ open class RestApiCaller : NSObject {
         
         // check http response has a supported type
         guard let httpResponse = response as? HTTPURLResponse else {
-            throw RestError.badResponse(response, data)
+            throw RestError.badResponse(response: response, data: data)
         }
         
         callReceiveInterceptors(data, httpResponse)
@@ -276,23 +276,31 @@ open class RestApiCaller : NSObject {
         responseDeserializer.jsonDecoder?.dateDecodingStrategy = options.dateDecodingStrategy
         
         let (data, httpResponse) = try await dataTask(relativePath: relativePath, httpMethod: httpMethod.rawValue, accept: responseDeserializer.acceptHeader, payload: payload, options: options)
-       
         let httpStatus = httpResponse.status
-        
+
+        // Log receipt for auditing
+        logger.debug("Received response: method=\(httpMethod.rawValue) path=\(relativePath ?? "/") status=\(httpStatus) size=\(data.count)")
+
         // For requests without deserialization and no error just return the status
         if shouldBypassDeserialization(responseDeserializer, status: httpStatus),
            httpStatus.type == .success {
+            logger.debug("Bypassing deserialization for status=\(httpStatus) at path=\(relativePath ?? "/")")
             return (nil, httpStatus)
         }
-        
-        guard !data.isEmpty  else {
-            throw RestError.failedRestCall(httpResponse, httpStatus, error: nil)
+
+        // If there's no body but the status indicates an error, surface a failedRestCall so callers
+        // can handle API-level errors. Log the condition for audit.
+        if data.isEmpty {
+            logger.warning("Empty response body received for status=\(httpStatus) at path=\(relativePath ?? "/"). Treating as failedRestCall.")
+            throw RestError.failedRestCall(response: httpResponse, status: httpStatus, errorPayload: nil)
         }
-        
-        // Postcondition: We have a response object or  error that needs to be parsed!
-        
+
+        // Postcondition: We have a response body that needs validation/parsing.
+
+
         _ = try validatedMimeType(from: httpResponse)
         
+
         if httpStatus.type == .success  {
             let transformedResponse = try decodeSuccessfulResponse(data: data, response: httpResponse, deserializer: responseDeserializer)
             return (transformedResponse, httpStatus)
@@ -306,12 +314,16 @@ open class RestApiCaller : NSObject {
     }
 
     private func validatedMimeType(from response: HTTPURLResponse) throws -> MimeType {
+        
         let contentType = response.value(forHTTPHeaderField: HTTPHeaderKeys.ContentType.rawValue)
         let firstContentMimeType = contentType?.components(separatedBy: ";").first
         
         guard let firstContentMimeType,
               let mimeType = MimeType(rawValue: firstContentMimeType) else {
-            throw RestError.invalidMimeType(contentType)
+
+            let mimeTypeError = RestError.invalidMimeType(mimeType: contentType)      
+            logger.error("Throw mimetype error: \(String(describing: mimeTypeError.errorDescription))")
+            throw  mimeTypeError
         }
         return mimeType
     }
@@ -321,7 +333,10 @@ open class RestApiCaller : NSObject {
             do {
                 return try deserializer.deserialize(data)
             } catch {
-                throw RestError.malformedResponse(response, data, error)
+                // Log decoding failure with diagnostics and rethrow a RestError
+                let malformedResponseError = RestError.malformedResponse(response: response, data: data, underlying: error)
+                logger.error("Failed to deserialize successful response throwing error: \(String(describing: malformedResponseError.errorDescription)).")
+                throw malformedResponseError             
             }
         }
         return nil
@@ -330,9 +345,13 @@ open class RestApiCaller : NSObject {
     private func buildErrorResponse(data: Data, response: HTTPURLResponse, status: HTTPStatusCode) throws -> RestError {
         do {
             let errorPayload = try errorDeserializer?.deserialize(data)
-            return RestError.failedRestCall(response, status, error: errorPayload)
+            let failedRestCall = RestError.failedRestCall(response: response, status: status, errorPayload: errorPayload)
+            logger.error("Failing rest call throw error: \(String(describing: failedRestCall.errorDescription))")
+            return failedRestCall
         } catch {
-            throw RestError.malformedResponse(response, data, error)
+            let malformedResponseError = RestError.malformedResponse(response: response, data: data, underlying: error)
+            logger.error("Error deserialing response throwing error: \(String(describing: malformedResponseError.errorDescription))")
+            throw malformedResponseError
         }
     }
     
