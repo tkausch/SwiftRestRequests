@@ -27,13 +27,6 @@ class AbstractRestApiCallerTests: XCTestCase {
         loggingLock.lock()
         defer { loggingLock.unlock() }
         
-        #if os(Linux)
-            // Configure `swift-log` default logger
-        #else
-            /// Configure `swift-log` logging system to use OSLog backend
-            // LoggingSystem.bootstrap(OSLogHandler.init)
-        #endif
-        
         Logger.SwiftRestRequests.security.logLevel = .trace
         Logger.SwiftRestRequests.interceptor.logLevel = .trace
         Logger.SwiftRestRequests.apiCaller.logLevel = .trace

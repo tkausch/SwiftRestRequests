@@ -29,6 +29,8 @@ public protocol Deserializer: Sendable {
     /// Value for the `Accept` header sent alongside the request (for example `application/json`).
     var acceptHeader: String { get }
 
+    var jsonDecoder: JSONDecoder? { get }
+    
     /// Creates a new instance of the deserializer.
     init()
 
@@ -44,12 +46,14 @@ public struct DecodableDeserializer<T: Decodable & Sendable>: Deserializer {
 
     public typealias ResponseType = T
 
+    public var jsonDecoder: JSONDecoder? = JSONDecoder()
+
     public let acceptHeader = MimeType.ApplicationJson.rawValue
 
     public init() { }
 
     public func deserialize(_ data: Data) throws -> T {
-        return try JSONDecoder().decode(T.self, from: data)
+        return try jsonDecoder!.decode(T.self, from: data)
     }
 }
 
@@ -59,6 +63,8 @@ public struct VoidDeserializer: Deserializer {
 
     public typealias ResponseType = Void
 
+    public var jsonDecoder: JSONDecoder? = nil
+    
     public let acceptHeader = MimeType.Void.rawValue
 
     public init() { }
@@ -74,6 +80,8 @@ public struct VoidDeserializer: Deserializer {
 public struct DataDeserializer: Deserializer {
 
     public typealias ResponseType = Data
+    
+    public var jsonDecoder: JSONDecoder? = nil
 
     public let acceptHeader = MimeType.ApplicationOctetStream.rawValue
 
