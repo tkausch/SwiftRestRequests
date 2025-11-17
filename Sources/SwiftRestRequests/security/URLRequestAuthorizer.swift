@@ -90,7 +90,7 @@ public final class BearerRequestAuthorizer: URLRequestAuthorizer {
     /// Applies the Bearer authorization header to the request.
     public func configureAuthorizationHeader(for urlRequest: inout URLRequest) {
         logger.trace("Set HTTP Authorization header", metadata: [
-            "Authorization": "Bearer \(self.token)"])
+            "Authorization": "Bearer *****"])
         urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
     }
 }
