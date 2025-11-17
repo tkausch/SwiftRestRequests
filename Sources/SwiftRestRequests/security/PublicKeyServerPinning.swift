@@ -19,12 +19,13 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-@preconcurrency import Foundation
+import Foundation
 
 #if os(Linux)
 // no public key pinning implemented
 #else
 
+@preconcurrency import Security
 import Logging
 
 /// URLSession delegate enforcing TLS pinning based on server public keys.
