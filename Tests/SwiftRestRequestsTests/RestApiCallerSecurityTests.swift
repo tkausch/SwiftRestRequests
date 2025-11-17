@@ -48,24 +48,23 @@ final class RestApiCallerSecurityTests: AbstractRestApiCallerTests {
         let authorizer = BearerRequestAuthorizer(token: BearerToken)
         let caller = RestApiCaller(baseUrl: url, authorizer: authorizer, enableNetworkTrace: true)
         
-        var (response, httpStatus) = try await caller.get(HttpBinBearerResponse.self, at: "bearer")
+        let (response, httpStatus) = try await caller.get(HttpBinBearerResponse.self, at: "bearer")
         
         XCTAssertEqual(httpStatus, .ok)
         XCTAssertNotNil(response)
         XCTAssertTrue(response!.authenticated)
         XCTAssertEqual(response!.token, BearerToken)
         
-        // NOW change bearer token
+        // Test with different bearer token using a new caller instance
+        let authorizer2 = BearerRequestAuthorizer(token: BearerToken2)
+        let caller2 = RestApiCaller(baseUrl: url, authorizer: authorizer2, enableNetworkTrace: true)
         
-        authorizer.token = BearerToken2
+        let (response2, httpStatus2) = try await caller2.get(HttpBinBearerResponse.self, at: "bearer")
         
-        
-        (response, httpStatus) = try await caller.get(HttpBinBearerResponse.self, at: "bearer")
-        
-        XCTAssertEqual(httpStatus, .ok)
-        XCTAssertNotNil(response)
-        XCTAssertTrue(response!.authenticated)
-        XCTAssertEqual(response!.token, BearerToken2)
+        XCTAssertEqual(httpStatus2, .ok)
+        XCTAssertNotNil(response2)
+        XCTAssertTrue(response2!.authenticated)
+        XCTAssertEqual(response2!.token, BearerToken2)
         
         
     }
