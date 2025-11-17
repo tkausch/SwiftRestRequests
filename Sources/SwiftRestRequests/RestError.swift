@@ -24,7 +24,6 @@ import Foundation
 import FoundationNetworking
 #endif
 
-
 /// Errors thrown when executing REST requests.
 ///
 /// `RestError` provides comprehensive error information for REST API operations, allowing callers to
@@ -81,8 +80,8 @@ public enum RestError: Error {
     ///   - Data: The raw data returned in the response body.
     ///
     /// - Note: This error typically indicates a server misconfiguration or a proxy interference.
-    case badResponse(URLResponse, Data)
-    
+    case badResponse(response: URLResponse, data: Data)
+
     /// Indicates that the server responded with an unexpected MIME type.
     ///
     /// This error occurs when the Content-Type header in the response doesn't match
@@ -93,8 +92,8 @@ public enum RestError: Error {
     ///                    May be nil if no Content-Type header was present.
     ///
     /// - Note: Configure `RestOptions.acceptedMimeTypes` to specify additional accepted MIME types.
-    case invalidMimeType(String?)
-    
+    case invalidMimeType(mimeType: String?)
+
     /// Indicates that query parameters could not be encoded using percent encoding.
     ///
     /// This error occurs when attempting to encode query parameters into a URL-safe format
@@ -115,8 +114,6 @@ public enum RestError: Error {
     /// - Malformed JSON or other formats
     ///
     /// - Parameters:
-
-  
     ///   - HTTPURLResponse: The HTTP response metadata from the server.
     ///   - Data: The raw response data that failed to deserialize.
     ///   - Error: The underlying error (typically a `DecodingError`) that provides
@@ -124,10 +121,9 @@ public enum RestError: Error {
     ///
     /// - Note: Inspect the underlying Error for detailed information about the deserialization failure.
     ///         For DecodingError cases, the error will contain the specific path where decoding failed.
-    case malformedResponse(HTTPURLResponse, Data, Error)
-   
-    
-    /// Indicates the API call failed with an error response from the server.
+    case malformedResponse(response: HTTPURLResponse, data: Data, underlying: any Error)
+
+   /// Indicates the API call failed with an error response from the server.
     ///
     /// This error represents a failed API call where the server returned an error response.
     /// The error includes the full HTTP response, the specific status code, and optionally
@@ -148,8 +144,8 @@ public enum RestError: Error {
     ///     }
     /// }
     /// ```
-    case failedRestCall(HTTPURLResponse, HTTPStatusCode, error: (any Sendable)?)
-    
+    case failedRestCall(response: HTTPURLResponse, status: HTTPStatusCode, errorPayload: (any Sendable)?)
+
     /// Indicates that the response contained an unexpected HTTP status code.
     ///
     /// This error occurs when the server returns an HTTP status code that isn't in the
@@ -167,7 +163,82 @@ public enum RestError: Error {
     /// // Configure 404 as valid for this request
     /// var options = RestOptions()
     /// options.expectedStatusCodes = [200, 404]
-    /// ```
-    case unexpectedHttpStatusCode(Int)
-    
+    /// ```   
+    case unexpectedHttpStatusCode(statusCode: Int)
+
+
+}
+
+// MARK: - LocalizedError and debug helpers
+
+extension RestError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .badResponse:
+            return "Received an unsupported or invalid response from the server."
+        case .invalidMimeType(let mime):
+            return "Unexpected content type: \(mime ?? "unknown")."
+        case .invalidQueryParameter:
+            return "Failed to encode query parameters."
+        case .malformedResponse(_, _, let underlying):
+            return "Failed to decode response: \(underlying.localizedDescription)"
+        case .failedRestCall(_, let status, _):
+            return "Server returned an error (status: \(status))."
+        case .unexpectedHttpStatusCode(let code):
+            return "Unexpected HTTP status code: \(code)."
+        }
+    }
+
+    public var recoverySuggestion: String? {
+        switch self {
+        case .invalidQueryParameter:
+            return "Verify parameter values and percent-encode reserved characters."
+        case .malformedResponse:
+            return "Confirm the response schema matches the expected model and enable payload logging in debug builds."
+        default:
+            return nil
+        }
+    }
+}
+
+extension RestError: CustomDebugStringConvertible {
+    public var debugDescription: String {
+        switch self {
+        case .badResponse(let response, let data):
+            return "RestError.badResponse(url: \(response.url?.absoluteString ?? "n/a"), size: \(data.count))"
+        case .invalidMimeType(let mime):
+            return "RestError.invalidMimeType(mime: \(mime ?? "nil"))"
+        case .invalidQueryParameter:
+            return "RestError.invalidQueryParameter"
+        case .malformedResponse(let response, let data, let underlying):
+            return "RestError.malformedResponse(status: \(response.statusCode), size: \(data.count), underlying: \(underlying))"
+        case .failedRestCall(let response, let status, let payload):
+            return "RestError.failedRestCall(status: \(status), url: \(response.url?.absoluteString ?? "n/a"), payload: \(String(describing: payload)))"
+        case .unexpectedHttpStatusCode(let code):
+            return "RestError.unexpectedHttpStatusCode(\(code))"
+        }
+    }
+}
+
+// MARK: - Equatable (useful for tests)
+
+extension RestError: Equatable {
+    public static func == (lhs: RestError, rhs: RestError) -> Bool {
+        switch (lhs, rhs) {
+        case (.invalidQueryParameter, .invalidQueryParameter):
+            return true
+        case (.invalidMimeType(let a), .invalidMimeType(let b)):
+            return a == b
+        case (.unexpectedHttpStatusCode(let a), .unexpectedHttpStatusCode(let b)):
+            return a == b
+        case (.badResponse(let la, let ld), .badResponse(let ra, let rd)):
+            return la.url?.absoluteString == ra.url?.absoluteString && ld == rd
+        case (.malformedResponse(let la, _, _), .malformedResponse(let ra, _, _)):
+            return la.statusCode == ra.statusCode
+        case (.failedRestCall(_, let aStatus, _), .failedRestCall(_, let bStatus, _)):
+            return aStatus == bStatus
+        default:
+            return false
+        }
+    }
 }
