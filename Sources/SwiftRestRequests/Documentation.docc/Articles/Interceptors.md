@@ -121,8 +121,7 @@ class ThreadSafeInterceptor: RequestInterceptor {
 - ``AuthorizerInterceptor``
 
 ### Protocols
-- ``RequestInterceptor``
-- ``ResponseInterceptor``
+- ``URLRequestInterceptor``
 
 ### Related Types
 - ``RestApiCaller``

@@ -41,16 +41,16 @@ import FoundationNetworking
 /// ## Topics
 ///
 /// ### Response Validation Errors
-/// - ``badResponse(_:_:)``
-/// - ``invalidMimeType(_:)``
-/// - ``unexpectedHttpStatusCode(_:)``
+/// - ``badResponse(response:data:)``
+/// - ``invalidMimeType(mimeType:)``
+/// - ``unexpectedHttpStatusCode(statusCode:)``
 ///
 /// ### Data Processing Errors
-/// - ``malformedResponse(_:_:_:)``
+/// - ``malformedResponse(response:data:underlying:)``
 /// - ``invalidQueryParameter``
 ///
 /// ### API Errors
-/// - ``failedRestCall(_:_:error:)``
+/// - ``failedRestCall(response:status:errorPayload:)``
 ///
 /// ## Usage Example
 /// ```swift

@@ -32,7 +32,7 @@ The package supports iOS, macOS, watchOS, tvOS, visionOS, and Linux. It targets 
 
 - ``URLRequestAuthorizer``
 - ``BasicRequestAuthorizer``
-- ``BearerReqeustAuthorizer``
+- ``BearerRequestAuthorizer``
 - ``NoneAuthorizer``
 - ``AuthorizerInterceptor``
 
