@@ -1,5 +1,5 @@
 //
-// HttpUtil.swift
+// HTTPUtil.swift
 //
 // This File belongs to SwiftRestRequests
 // Copyright © 2024 Thomas Kausch.
