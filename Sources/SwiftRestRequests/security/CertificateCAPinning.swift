@@ -20,12 +20,13 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-@preconcurrency import Foundation
+import Foundation
 
 #if os(Linux)
 // no public key pinning implemented
 #else
 
+@preconcurrency import Security
 import Logging
 
 /// URLSession delegate that enforces TLS validation against a curated list of CA certificates.
