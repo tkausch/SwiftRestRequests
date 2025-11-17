@@ -22,6 +22,11 @@
 import XCTest
 @testable import SwiftRestRequests
 
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
+
+
 import XCTest
 
 struct HttpBinHeaders: Decodable {
