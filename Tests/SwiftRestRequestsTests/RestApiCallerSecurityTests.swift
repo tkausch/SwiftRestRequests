@@ -38,6 +38,8 @@ final class RestApiCallerSecurityTests: AbstractRestApiCallerTests {
         super.setUp()
     }
     
+
+
     func testBearerAuthorization() async throws {
         
         struct HttpBinBearerResponse: Decodable {
@@ -68,7 +70,8 @@ final class RestApiCallerSecurityTests: AbstractRestApiCallerTests {
         
         
     }
-    
+
+#if !os(Linux)
    
     func testBasicAuthorization() async throws {
         
@@ -88,6 +91,6 @@ final class RestApiCallerSecurityTests: AbstractRestApiCallerTests {
         XCTAssertEqual(response!.user, User)
     }
     
- 
+ #endif
     
 }
