@@ -272,6 +272,9 @@ open class RestApiCaller : NSObject {
     /// - Returns: The data returned by server and the corresponding `HTTPURLResponse`
     private func makeCall<T: Deserializer>(_ relativePath: String?, httpMethod: HTTPMethod, payload: Data?, responseDeserializer: T, options: RestOptions) async throws -> (T.ResponseType?, HTTPStatusCode) {
         
+        // for deserializer with decoder set date decoding strategy
+        responseDeserializer.jsonDecoder?.dateDecodingStrategy = options.dateDecodingStrategy
+        
         let (data, httpResponse) = try await dataTask(relativePath: relativePath, httpMethod: httpMethod.rawValue, accept: responseDeserializer.acceptHeader, payload: payload, options: options)
        
         let httpStatus = httpResponse.status

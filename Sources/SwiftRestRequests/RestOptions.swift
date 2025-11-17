@@ -43,6 +43,9 @@ public struct RestOptions {
     /// Any response outside of this set triggers a `RestError.unexpectedHttpStatusCode`.
     public var expectedStatusCodes: [HTTPStatusCode]?
     
+    /// Decode the `Date` as an ISO-8601-formatted string (in RFC 3339 format).
+    public var dateDecodingStrategy = JSONDecoder.DateDecodingStrategy.iso8601
+    
     /// Creates a new instance with default timeout and without overrides.
     public init() {}
 }
