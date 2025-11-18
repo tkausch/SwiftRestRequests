@@ -46,7 +46,7 @@ public struct DecodableDeserializer<T: Decodable & Sendable>: Deserializer {
 
     public typealias ResponseType = T
 
-    public var jsonDecoder: JSONDecoder? = JSONDecoder()
+    public let jsonDecoder: JSONDecoder? = JSONDecoder()
 
     public let acceptHeader = MimeType.ApplicationJson.rawValue
 
@@ -63,7 +63,7 @@ public struct VoidDeserializer: Deserializer {
 
     public typealias ResponseType = Void
 
-    public var jsonDecoder: JSONDecoder? = nil
+    public let jsonDecoder: JSONDecoder? = nil
     
     public let acceptHeader = MimeType.Void.rawValue
 
@@ -81,7 +81,7 @@ public struct DataDeserializer: Deserializer {
 
     public typealias ResponseType = Data
     
-    public var jsonDecoder: JSONDecoder? = nil
+    public let jsonDecoder: JSONDecoder? = nil
 
     public let acceptHeader = MimeType.ApplicationOctetStream.rawValue
 
